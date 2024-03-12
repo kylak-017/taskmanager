@@ -4,8 +4,13 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import { TextField, Button } from '@mui/material';
 // Import the functions you need from the SDKs you need
+
+
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+
+
+
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
@@ -27,6 +32,19 @@ export default function Login() {
     const [password, setPassword] = useState("");
 
     const login = async() => {
+            const auth = getAuth(); //whattever was in the function getAuth()
+
+            signInWithEmailAndPassword(auth, email, password) //function
+                .then((userCredential) =>{
+                    const user = userCredential.user;
+                })
+                .catch((error) =>{
+                    const errorCode = error.code; //create variable
+                    console.error("Error code:", errorCode);
+                    const errorMessage = error.message;
+                    console.log("Error message:", errorMessage);
+                });
+        
         
     }
 
@@ -95,6 +113,10 @@ export default function Login() {
                         }}
                         placeholder="Email"
                         variant='outlined'
+                        value = {email}
+                        onChange = {(element) => {
+                            setEmail(element.target.value)
+                        }}
                     />
                     <Typography
                         sx={{
@@ -116,6 +138,9 @@ export default function Login() {
                         }}
                         variant='outlined'
                         placeholder="Password"
+                        onChange = {(element) => {
+                            setPassword(element.target.value)
+                        }}
                     />
                     <Button
                         variant="contained" 
