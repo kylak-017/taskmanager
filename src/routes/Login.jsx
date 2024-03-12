@@ -45,7 +45,7 @@ export default function Root() {
                 <Box
                     sx={{
                     width: 350,
-                    height: 500,
+                    height: 400,
                     borderRadius: 2,
                     backgroundColor: 'white',
                     boxShadow: 2,
@@ -55,10 +55,11 @@ export default function Root() {
                     <Typography
                         sx={{
                             color: 'rgb(196, 196, 196)',
-                            fontWeight: 'bold'
+                            fontWeight: 'bold',
+                            fontSize: 13
                         }}
                     >
-                        Email
+                        EMAIL
                     </Typography>
                     <TextField 
                         sx={{
