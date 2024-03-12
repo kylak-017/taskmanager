@@ -6,8 +6,13 @@ import { TextField, Button } from '@mui/material';
 import { Task } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 // Import the functions you need from the SDKs you need
+
+
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+
+
+
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
@@ -29,7 +34,20 @@ export default function Login() {
     const [password, setPassword] = useState("");
 
     const login = async() => {
+            const auth = getAuth(); //whattever was in the function getAuth()
 
+            signInWithEmailAndPassword(auth, email, password) //function
+                .then((userCredential) =>{
+                    const user = userCredential.user;
+                })
+                .catch((error) =>{
+                    const errorCode = error.code; //create variable
+                    console.error("Error code:", errorCode);
+                    const errorMessage = error.message;
+                    console.log("Error message:", errorMessage);
+                });
+        
+        
     }
 
   return (
@@ -124,8 +142,9 @@ export default function Login() {
                         size="medium"
                         placeholder="example@mail.com"
                         variant='outlined'
-                        onChange={(el) => {
-                            setEmail(el.target.value)
+                        value = {email}
+                        onChange = {(element) => {
+                            setEmail(element.target.value)
                         }}
                     />
                     <Typography
@@ -149,6 +168,9 @@ export default function Login() {
                         size="medium"
                         variant='outlined'
                         placeholder="Password"
+                        onChange = {(element) => {
+                            setPassword(element.target.value)
+                        }}
                     />
                     <Button
                         variant="contained" 
