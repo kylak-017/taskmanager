@@ -1,11 +1,35 @@
-import * as React from 'react';
+import React, { useState } from 'react';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import { TextField, Button } from '@mui/material';
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyA5shfSHuaEIYom0OeAjy8Qppkrivj8ND0",
+  authDomain: "taskmanager-f333c.firebaseapp.com",
+  projectId: "taskmanager-f333c",
+  storageBucket: "taskmanager-f333c.appspot.com",
+  messagingSenderId: "637162360901",
+  appId: "1:637162360901:web:bfb56a3e7c6c490220132c",
+  measurementId: "G-9Q221LJ1N1"
+};
 
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
 export default function Login() {
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+
+    const login = async() => {
+        
+    }
+
   return (
     <div
         style={{
