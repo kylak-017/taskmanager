@@ -6,6 +6,7 @@ import {
 } from "react-router-dom";
 import "./index.css";
 import Login from "./routes/Login";
+import Root from "./routes/Root";
 import { ThemeProvider } from "@emotion/react";
 import theme from "./theme";
 
@@ -18,6 +19,10 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <Root />,
+  },
+  {
+    path: "/login",
+    element: <Login />,
   },
 ]);
 

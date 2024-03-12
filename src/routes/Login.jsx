@@ -5,7 +5,7 @@ import Box from '@mui/material/Box';
 import { TextField, Button } from '@mui/material';
 
 
-export default function Root() {
+export default function Login() {
   return (
     <div
         style={{
@@ -76,10 +76,11 @@ export default function Root() {
                         sx={{
                             marginTop: 3,
                             color: 'rgb(196, 196, 196)',
-                            fontWeight: 'bold'
+                            fontWeight: 'bold',
+                            fontSize: 13
                         }}
                     >
-                        Password
+                        PASSWORD
                     </Typography>
                     <TextField 
                         sx={{
