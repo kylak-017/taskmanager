@@ -24,9 +24,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-export default function Login() {
+export default function Register() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
 
     const login = async() => {
 
@@ -84,7 +85,7 @@ export default function Login() {
                         color: '#f3dbda'
                     }}
                 >
-                    Login
+                    Register
                 </Typography>
             </Box>
             <Box
@@ -150,6 +151,28 @@ export default function Login() {
                         variant='outlined'
                         placeholder="Password"
                     />
+                    <Typography
+                        sx={{
+                            marginTop: 3,
+                            color: 'rgb(196, 196, 196)',
+                            fontWeight: 'bold',
+                            fontSize: 13
+                        }}
+                    >
+                        CONFIRM PASSWORD
+                    </Typography>
+                    <TextField 
+                        sx={{
+                            border: 'none',
+                            "& fieldset": { border: 'none' },
+                            width: '100%',
+                            backgroundColor: 'rgb(239, 239, 239)',
+                            borderRadius: 1
+                        }}
+                        size="medium"
+                        variant='outlined'
+                        placeholder="Confirm Password"
+                    />
                     <Button
                         variant="contained" 
                         sx={{
@@ -159,7 +182,7 @@ export default function Login() {
                         }}
                         size="large"
                     >
-                        Login With Email
+                        Register With Email
                     </Button>
                     <div
                         style={{
@@ -167,7 +190,7 @@ export default function Login() {
                             
                         }}
                     >
-                        Don't have an account? <Link to="/register">Register</Link>
+                        Already have an account? <Link to="/login">Login</Link>
                     </div>
                 </Box>
             </Box>

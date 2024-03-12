@@ -7,6 +7,7 @@ import {
 import "./index.css";
 import Login from "./routes/Login";
 import Root from "./routes/Root";
+import Register from "./routes/Register";
 import { ThemeProvider } from "@emotion/react";
 import theme from "./theme";
 
@@ -19,6 +20,10 @@ const router = createBrowserRouter([
     path: "/",
     element: <Root />,
   },
+  {
+    path: "register",
+    element: <Register />
+  }
 ]);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
