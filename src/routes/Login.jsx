@@ -9,7 +9,15 @@ import { Link } from 'react-router-dom';
 
 
 import { initializeApp } from "firebase/app";
+import {
+    RecoilRoot,
+    atom,
+    selector,
+    useRecoilState,
+    useRecoilValue,
+  } from 'recoil';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+
 
 
 
@@ -29,16 +37,21 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
+
 export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
+    
+
     const login = async() => {
             const auth = getAuth(); //whattever was in the function getAuth()
 
-            signInWithEmailAndPassword(auth, email, password) //function
+            signInWithEmailAndPassword(auth, email, password) //the email parameter is derived from the getemail
                 .then((userCredential) =>{
                     const user = userCredential.user;
+                    setLogEmail(email);
+                    setLogPw(password); //after login is confirmed, email and password parameter is saved to the respective atoms for recoil state
                 })
                 .catch((error) =>{
                     const errorCode = error.code; //create variable

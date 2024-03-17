@@ -1,5 +1,5 @@
 import React from "react"
 
-export default function Root(){
+export default function Main(){
     
 }

@@ -6,7 +6,14 @@ import {
 } from "react-router-dom";
 import "./index.css";
 import Login from "./routes/Login";
-import Root from "./routes/Root";
+import Main from "./routes/Main";
+import {
+  RecoilRoot,
+  atom,
+  selector,
+  useRecoilState,
+  useRecoilValue,
+} from 'recoil';
 import Register from "./routes/Register";
 import { ThemeProvider } from "@emotion/react";
 import theme from "./theme";
@@ -14,15 +21,25 @@ import theme from "./theme";
 const router = createBrowserRouter([
   {
     path: "/login",
-    element: <Login />
+    element: 
+    <RecoilRoot>
+      <Login />
+    </RecoilRoot>
+    
   },
   {
     path: "/",
-    element: <Root />,
+    element: 
+    <RecoilRoot>
+      <Root />
+    </RecoilRoot>
   },
   {
     path: "register",
-    element: <Register />
+    element:
+    <RecoilRoot>
+     <Register />
+     </RecoilRoot>
   }
 ]);
 
