@@ -7,7 +7,9 @@ import { Task } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { configureStore } from 'redux';
+import { Provider } from 'react-redux';
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
@@ -27,11 +29,36 @@ const auth = getAuth(app);
 export default function Register() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");//for initializing a variable
 
-    const login = async() => {
+    const register = async() => {
+        createUserWithEmailAndPassword(auth, email, password)
+            .then((userCredential) => {
+                const user = userCredential.user;
+            })
+            .catch((error) => {
+                const errorCode = error.code; //create variable
+                console.error("Error code:", errorCode);
+                const errorMessage = error.message;
+                console.log("Error message:", errorMessage);
+            });
 
     }
+
+    const Confirm = () => {
+        if(password != confirmPassword){
+            alert("Password does not match.");
+            return;
+        }
+        
+
+        register();
+    }
+
+   
+
+
+    
 
   return (
     <div
@@ -150,6 +177,9 @@ export default function Register() {
                         size="medium"
                         variant='outlined'
                         placeholder="Password"
+                        onChange={(el) => {
+                            setPassword(el.target.value)
+                        }}
                     />
                     <Typography
                         sx={{
@@ -172,6 +202,9 @@ export default function Register() {
                         size="medium"
                         variant='outlined'
                         placeholder="Confirm Password"
+                        onChange={(el) => {
+                            setConfirmPassword(el.target.value)
+                        }}
                     />
                     <Button
                         variant="contained" 
@@ -181,6 +214,9 @@ export default function Register() {
                             backgroundColor: '#383838'
                         }}
                         size="large"
+                        onClick={() =>{
+                            Confirm();
+                        }}
                     >
                         Register With Email
                     </Button>
