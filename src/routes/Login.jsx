@@ -177,7 +177,8 @@ export default function Login() {
                         sx={{
                             width: '100%',
                             marginTop: 2,
-                            backgroundColor: '#383838'
+                            backgroundColor: '#383838',
+                            fontWeight: 'bold'
                         }}
                         size="large"
                     >
@@ -185,11 +186,52 @@ export default function Login() {
                     </Button>
                     <div
                         style={{
-                            textAlign: 'center',
-                            
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            marginTop: 20
                         }}
                     >
-                        Don't have an account? <Link to="/register">Register</Link>
+                        <div
+                            style={{
+                                borderTop: 'solid #ebebeb 1px',
+                                width: '40%',
+                            }}
+                        >
+                        </div>
+                        <div
+                            style={{
+                                color: '#d6d6d6',
+                                fontSize: 18
+                            }}
+                        >
+                            or
+                        </div>
+                        <div
+                            style={{
+                                borderTop: 'solid #ebebeb 1px',
+                                width: '40%',
+                            }}
+                        >
+                        </div>
+                    </div>
+                    <div
+                        style={{
+                            textAlign: 'center',
+                            marginTop: 10
+                        }}
+                    >
+                        Don't have an account? {' '}
+                        <Link 
+                            to="/register"
+                            style={{
+                                textDecoration: 'none',
+                                color: 'black',
+                                fontWeight: 'bold'
+                            }}
+                        >
+                            Register
+                        </Link>
                     </div>
                 </Box>
             </Box>

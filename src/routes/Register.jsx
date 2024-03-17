@@ -178,7 +178,8 @@ export default function Register() {
                         sx={{
                             width: '100%',
                             marginTop: 2,
-                            backgroundColor: '#383838'
+                            backgroundColor: '#383838',
+                            fontWeight: 'bold'
                         }}
                         size="large"
                     >
@@ -190,7 +191,17 @@ export default function Register() {
                             
                         }}
                     >
-                        Already have an account? <Link to="/login">Login</Link>
+                        Already have an account? {' '}
+                        <Link 
+                            to="/login"
+                            style={{
+                                textDecoration: 'none',
+                                color: 'black',
+                                fontWeight: 'bold'
+                            }}
+                        >
+                            Login
+                        </Link>
                     </div>
                 </Box>
             </Box>
