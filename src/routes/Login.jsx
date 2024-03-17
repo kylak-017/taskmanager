@@ -16,6 +16,7 @@ import {
     useRecoilState,
     useRecoilValue,
   } from 'recoil';
+import {emailAtom, passwordAtom } from "Recoil.jsx";
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 
 
@@ -42,6 +43,8 @@ export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
+    const[LogEmail, setLogEmail] = useRecoilState(emailAtom);
+    const[LogPw, setLogPw] = useRecoilState(emailAtom);
     
 
     const login = async() => {
@@ -50,8 +53,8 @@ export default function Login() {
             signInWithEmailAndPassword(auth, email, password) //the email parameter is derived from the getemail
                 .then((userCredential) =>{
                     const user = userCredential.user;
-                    setLogEmail(email);
-                    setLogPw(password); //after login is confirmed, email and password parameter is saved to the respective atoms for recoil state
+                    setLogEmail(emailAtom);
+                    setLogPw(passwordAtom); //after login is confirmed, email and password parameter is saved to the respective atoms for recoil state
                 })
                 .catch((error) =>{
                     const errorCode = error.code; //create variable
