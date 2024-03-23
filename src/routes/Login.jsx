@@ -16,7 +16,7 @@ import {
     useRecoilState,
     useRecoilValue,
   } from 'recoil';
-import {emailAtom, passwordAtom } from "Recoil.jsx";
+import {emailAtom, passwordAtom } from "../recoil/Recoil";
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 
 

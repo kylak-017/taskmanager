@@ -1,3 +1,5 @@
+import { atom } from 'recoil';
+
 const emailAtom = atom({
     key: "emailAtom",
     default: "",
@@ -8,4 +10,4 @@ const passwordAtom = atom({
 
 });
 
-export default {emailAtom, passwordAtom};
+export  {emailAtom, passwordAtom};

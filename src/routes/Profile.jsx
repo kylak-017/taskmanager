@@ -7,9 +7,9 @@ import {
     useRecoilState,
     useRecoilValue,
   } from 'recoil';
-import {emailAtom, passwordAtom } from "Recoil.jsx";
+import {emailAtom, passwordAtom } from "../recoil/Recoil";
 
-export default function Main(){
+export default function Profile(){
     const useEmail= selector({ //Can be used when the user clicks on their profile to view their email
         key: "useEmail",
         get: ({get}) => {
