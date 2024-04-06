@@ -10,6 +10,8 @@ import { Task } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import 'react-calendar-timeline/lib/Timeline.css';
 import { useState, useEffect } from "react";
+import { AddCircleOutline } from '@mui/icons-material';
+import {Grid, Divider} from "@mui/material";
 
 
 import { ArrowBackIos } from "@mui/icons-material";
@@ -34,6 +36,16 @@ export default function Main() {
     const CloseModal = () => setModalOpen(false);
 
     const [isAutoTrue, setAutoTrue] = useState(false);
+    const [tasks, setTasks] = useState([
+        {
+            title: 'Math',
+            curPomodoro: 0,
+            totalPomodoro: 2
+        }
+    ])
+
+    const [completedPomos, setCompletedPomos] = useState(0);
+    
 
   
 
@@ -186,14 +198,6 @@ export default function Main() {
 
 
 
-
-    const [tasks, setTasks] = useState([
-        {
-            title: 'Math',
-            curPomodoro: 0,
-            totalPomodoro: 2
-        }
-    ])
 
     return (
         <>
@@ -601,6 +605,7 @@ export default function Main() {
 
                     </Box>
                 </Container>
+
                 <Container>
                      <Box 
                      sx = {{ 
@@ -670,13 +675,7 @@ export default function Main() {
                         </Box> 
                     </Container>
 
-                   
                 
-
-                
-          
-
-          
             </div>
         </>
     )
