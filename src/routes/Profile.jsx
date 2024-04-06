@@ -1,5 +1,11 @@
-import { Typography } from "@mui/material";
+
 import React from "react"
+import Container from '@mui/material/Container';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import { Task } from '@mui/icons-material';
+
+import Box from '@mui/material/Box';
 import {
     RecoilRoot,
     atom,
@@ -9,37 +15,51 @@ import {
   } from 'recoil';
 import {emailAtom, passwordAtom } from "../recoil/Recoil";
 
-export default function Profile(){
-    const useEmail= selector({ //Can be used when the user clicks on their profile to view their email
-        key: "useEmail",
-        get: ({get}) => {
-            const email = get(emailAtom);
+const useEmail= selector({ //Can be used when the user clicks on their profile to view their email
+    key: "useEmail",
+    get: ({get}) => {
+        const email = get(emailAtom);
 
-            return email;
-
-        }
-    })
-
-    const usePassword= selector({ //Can be used when the user clicks on their profile to view their email
-        key: "usePW",
-        get: ({get}) => {
-            const PW = get(passwordAtom);
-
-            return PW;
-
-        }
-    })
-
-    const profieViewer = () => {
-        const comp1 = useRecoilValue(useEmail);
-        const comp2 = useRecoilValue(usePassword);
-
-        return <>Your Email: {comp1} 
-        <br></br>
-        Your Password: {comp2}
-        </>;
+        return email;
 
     }
+})
+
+const usePassword= selector({ //Can be used when the user clicks on their profile to view their email
+    key: "usePW",
+    get: ({get}) => {
+        const PW = get(passwordAtom);
+
+        return PW;
+
+    }
+})
+{/* */}
+function ProfileViewer() {
+    // Use the hooks inside the component
+    const email = useRecoilValue(emailAtom);
+    const password = useRecoilValue(passwordAtom);
+  
+    // Render the email and password (though rendering password directly is not recommended for security reasons)
+    return (
+      <div>
+        <p>Your Email: {email}</p>
+        <p>Your Password: {password}</p> 
+        <p>Change Password:</p>
+      </div>
+    );
+  }
+
+
+
+
+
+export default function Profile(){
+   
+
+
+       
+     
 
     return (
 
@@ -52,27 +72,15 @@ export default function Profile(){
                 alignItems: 'center'
             }} >
 
-                <ul>
-                    <li>View Profile</li>
-                    <li>View Stats</li>
-                    <li>View Achievements</li>
-                </ul>
 
-                <Conatiner>
-                    
-                    <Box>
-                        <Task>
-                            
-                        </Task>
-                        <Typography>
-                            {profileViewer()}
-                            
-                        </Typography>
-                        <Button>
-                            Change Password
-                        </Button>
-                    </Box>
-                </Conatiner>
+
+              
+            <ProfileViewer />
+
+
+                
+    
+           
 
         </div>
 

@@ -15,6 +15,7 @@ import {
   useRecoilValue,
 } from 'recoil';
 import Register from "./routes/Register";
+import Profile from "./routes/Profile"
 import { ThemeProvider } from "@emotion/react";
 import theme from "./theme";
 
@@ -40,7 +41,16 @@ const router = createBrowserRouter([
     <RecoilRoot>
      <Register />
      </RecoilRoot>
-  }
+  },
+  {
+    path: "profile",
+    element:
+    <RecoilRoot>
+     <Profile />
+     </RecoilRoot>
+  },
+
+
 ]);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
