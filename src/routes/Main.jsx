@@ -186,6 +186,15 @@ export default function Main() {
 
 
 
+
+    const [tasks, setTasks] = useState([
+        {
+            title: 'Math',
+            curPomodoro: 0,
+            totalPomodoro: 2
+        }
+    ])
+
     return (
         <>
             <div
