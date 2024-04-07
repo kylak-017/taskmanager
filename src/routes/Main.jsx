@@ -23,9 +23,9 @@ export default function Main() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const displaycurrentDate = currentDate.toLocaleDateString()
 
-    const [timePomo, setTimePomo] = useState(3 );
-    const [timeBreakS, setTimeBreakS] = useState(3 );
-    const [timeBreakL, setTimeBreakL] = useState(3 );
+    const [timePomo, setTimePomo] = useState(1 );
+    const [timeBreakS, setTimeBreakS] = useState(1 );
+    const [timeBreakL, setTimeBreakL] = useState(1  );
     const [isTimerActive, setIsTimerActive] = useState(false);
     const [version, setVersion] = useState('pomo');
     const [minutes, setMinutes] = useState(0);
@@ -49,6 +49,14 @@ export default function Main() {
     const [completedPomos, setCompletedPomos] = useState(0);
     const [completedBreakS, setCompletedBreakS] = useState(0);
     const [completedBreakL, setCompletedBreakL] = useState(0);
+
+    const decrementTime = (timeSetter, onComplete) => {
+        timeSetter(time => {
+            if (time > 0) return time - 1;
+            onComplete();
+            return 0; 
+        });
+    };
     
     
 
@@ -104,7 +112,13 @@ export default function Main() {
             interval = setInterval( () =>{
                 switch(version){
                     case 'pomo':
-                        setTimePomo(time => time > 0 ? time - 1 : 0);
+                        if (timePomo === 0 ){
+                            setVersion('shortBreak')
+
+                        }
+                        else{
+                            setTimePomo(time => time > 0 ? time - 1 : 0);
+                        }
                         break;
                     case 'shortBreak':
                         setTimeBreakS(time => time > 0 ? time - 1 : 0);
@@ -224,7 +238,7 @@ export default function Main() {
       };
 
     const AutoStartTimer = () => {
-        setAutoTrue(!isAutoTrue);
+        setAutoTrue(isAutoTrue);
 
     }
 
@@ -508,7 +522,7 @@ export default function Main() {
                                         AutoStartTimer
                                     }
                                 >
-                                    <p><b>{isAutoTrue ? 'Yes': 'No'}</b></p>
+                                    <p><b>{isAutoTrue ? 'No': 'Yes'}</b></p>
 
                                 </Button>
                               
