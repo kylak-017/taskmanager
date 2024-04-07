@@ -23,17 +23,19 @@ export default function Main() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const displaycurrentDate = currentDate.toLocaleDateString()
 
-    const [timePomo, setTimePomo] = useState(25 * 60);
-    const [timeBreakS, setTimeBreakS] = useState(5 * 60);
-    const [timeBreakL, setTimeBreakL] = useState(15 * 60);
+    const [timePomo, setTimePomo] = useState(3 );
+    const [timeBreakS, setTimeBreakS] = useState(3 );
+    const [timeBreakL, setTimeBreakL] = useState(3 );
     const [isTimerActive, setIsTimerActive] = useState(false);
     const [version, setVersion] = useState('pomo');
     const [minutes, setMinutes] = useState(0);
     const [seconds, setSeconds] = useState(0);
-    const [isModalOpen, setModalOpen] = useState(false);
 
+    const [isModalOpen, setModalOpen] = useState(false);
+    const [modalVersion, setModalVersion] = useState('');
     const OpenModal = () => setModalOpen(true);
     const CloseModal = () => setModalOpen(false);
+    
 
     const [isAutoTrue, setAutoTrue] = useState(false);
     const [tasks, setTasks] = useState([
@@ -45,10 +47,54 @@ export default function Main() {
     ])
 
     const [completedPomos, setCompletedPomos] = useState(0);
+    const [completedBreakS, setCompletedBreakS] = useState(0);
+    const [completedBreakL, setCompletedBreakL] = useState(0);
+    
     
 
-  
-
+    useEffect(() => {
+        if (!isAutoTrue || !isTimerActive) return;
+    
+        const decrementTime = (timeSetter, onComplete) => {
+            timeSetter(time => {
+                if (time > 0) return time - 1;
+                onComplete();
+                return 0; 
+            });
+        };
+    
+        if (version === 'pomo') {
+            decrementTime(setTimePomo, () => {
+                setCompletedPomos(completed => {
+                    setIsTimerActive(true);
+                    setVersion('shortBreak');
+                    return completed + 1;
+                });
+            });
+        } else if (version === 'shortBreak') {
+            decrementTime(setTimeBreakS, () => {
+                setCompletedBreakS(completed => {
+                    if (completed + 1 === 4) {
+                        setIsTimerActive(true);
+                        setVersion('longBreak'); 
+                    } else {
+                        setIsTimerActive(true);
+                        setVersion('pomo'); 
+                    }
+                    return completed + 1;
+                });
+            });
+        } else if (version === 'longBreak') {
+            decrementTime(setTimeBreakL, () => {
+                setCompletedBreakL(completed => {
+                    setVersion('pomo'); 
+                    setIsTimerActive(true);
+                    return completed + 1;
+                });
+            });
+        }
+    }, [isAutoTrue, isTimerActive, version]);
+    
    
 
     useEffect(() => {
@@ -70,6 +116,7 @@ export default function Main() {
 
 
                 }
+        
         }, 1000);
     }
 
@@ -81,7 +128,7 @@ export default function Main() {
             clearInterval(interval);
         }
     };
-    }, [timePomo, timeBreakS, timeBreakL, isTimerActive]);
+    }, [timePomo, timeBreakS, timeBreakL, isTimerActive, version]);
 
     useEffect ( () => {
         if(version == 'pomo'){
@@ -121,6 +168,22 @@ export default function Main() {
         }
 
       
+    }
+
+    const whichModal = (whichModalVersion) =>{
+        switch (whichModalVersion) {
+            case 'settings':
+                setModalVersion('settings');
+                break;
+            case 'report':
+                setModalVersion('report');
+                break;
+            case 'logout':
+                setModalVersion('logout');
+                break;
+        }
+
+        
     }
     
 
@@ -259,7 +322,11 @@ export default function Main() {
 
                 
                             
-                            <Button>
+                            <Button
+                                onClick = {
+                                    OpenModal
+                                }
+                            >
                                 <Assessment
                                     sx = {{
                                         color: 'white',
@@ -278,13 +345,41 @@ export default function Main() {
                                 >
                                     Report
                                 </Typography>
-
                             </Button>
+
+                                {isModalOpen && <Modal>
+
+                                <Button 
+                                onClick = { 
+                                    CloseModal
+                                    } 
+                                sx = {{
+                                    marginLeft: '390px',
+                                    color: '#ba4949',
+                                    fontSize: '20px',
+                                    justifyContent: 'flex-end',
+                                    
+                                    }} 
+                                >
+
+                                <b>X</b> 
+                                </Button>
+
+                                <Typography>
+                                    Completed Pomos: 
+                                </Typography>
+                                <Typography>
+                                    {completedPomos}
+                                </Typography>
+                                </Modal>}
+
+                           
 
 
                             <Button
                                 onClick = {
                                     OpenModal
+                             
                                 }
                             >
 
@@ -313,6 +408,8 @@ export default function Main() {
                                 <Button 
                                 onClick = { 
                                     CloseModal
+
+                                    
                                     } 
                                 sx = {{
                                     marginLeft: '390px',
@@ -411,7 +508,7 @@ export default function Main() {
                                         AutoStartTimer
                                     }
                                 >
-                                    <p><b>{isAutoTrue ? 'No': 'Yes'}</b></p>
+                                    <p><b>{isAutoTrue ? 'Yes': 'No'}</b></p>
 
                                 </Button>
                               
