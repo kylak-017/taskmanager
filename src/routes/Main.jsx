@@ -24,8 +24,8 @@ export default function Main() {
     const displaycurrentDate = currentDate.toLocaleDateString()
 
     const [timePomo, setTimePomo] = useState(1 );
-    const [timeBreakS, setTimeBreakS] = useState(1 );
-    const [timeBreakL, setTimeBreakL] = useState(1  );
+    const [timeBreakS, setTimeBreakS] = useState(2 );
+    const [timeBreakL, setTimeBreakL] = useState(3  );
     const [isTimerActive, setIsTimerActive] = useState(false);
     const [version, setVersion] = useState('pomo');
     const [minutes, setMinutes] = useState(0);
@@ -50,82 +50,64 @@ export default function Main() {
     const [completedBreakS, setCompletedBreakS] = useState(0);
     const [completedBreakL, setCompletedBreakL] = useState(0);
 
-    const decrementTime = (timeSetter, onComplete) => {
-        timeSetter(time => {
-            if (time > 0) return time - 1;
-            onComplete();
-            return 0; 
-        });
-    };
     
     
 
-    useEffect(() => {
-        if (!isAutoTrue || !isTimerActive) return;
-    
-        const decrementTime = (timeSetter, onComplete) => {
-            timeSetter(time => {
-                if (time > 0) return time - 1;
-                onComplete();
-                return 0; 
-            });
-        };
-    
-        if (version === 'pomo') {
-            decrementTime(setTimePomo, () => {
-                setCompletedPomos(completed => {
-                    setIsTimerActive(true);
-                    setVersion('shortBreak');
-                    return completed + 1;
-                });
-            });
-        } else if (version === 'shortBreak') {
-            decrementTime(setTimeBreakS, () => {
-                setCompletedBreakS(completed => {
-                    if (completed + 1 === 4) {
-                        setIsTimerActive(true);
-                        setVersion('longBreak'); 
-                    } else {
-                        setIsTimerActive(true);
-                        setVersion('pomo'); 
-                    }
-                    return completed + 1;
-                });
-            });
-        } else if (version === 'longBreak') {
-            decrementTime(setTimeBreakL, () => {
-                setCompletedBreakL(completed => {
-                    setVersion('pomo'); 
-                    setIsTimerActive(true);
-                    return completed + 1;
-                });
-            });
-        }
-    }, [isAutoTrue, isTimerActive, version]);
-    
-   
 
     useEffect(() => {
         let interval = null;
+
     
         if (isTimerActive) {
             interval = setInterval( () =>{
                 switch(version){
                     case 'pomo':
-                        if (timePomo === 0 ){
-                            setVersion('shortBreak')
+                        if (timePomo === 0 && isAutoTrue) {
+                            setCompletedPomos(completedPomos +1);
+                                if (completedPomos === 4) {
+                                setVersion('longBreak');
+                                setTimePomo(1);
+                                break;
+                                
+                                } 
+                                else {
+                                setVersion('shortBreak');
+                                setTimePomo(1);
+                                break;
+                                }
+            
+                        }
+                            
+                         else {
+                            setTimePomo(time => time > 0 ? time - 1 : 0);
+                          }
+
+                          break;
+                    case 'shortBreak':
+                        if (timeBreakS === 0 && isAutoTrue){
+                            setVersion('pomo')
+                            setTimeBreakS(2);
+                            break;
+                            
+                        }
+                        else{
+                            setTimeBreakS(time => time > 0 ? time - 1 : 0);
+                        }
+                        
+                        break;
+                    case 'longBreak':
+                        if (timeBreakL === 0 && isAutoTrue){
+                            setVersion('pomo')
+                            setTimeBreakL(3);
+                            break;
 
                         }
                         else{
-                            setTimePomo(time => time > 0 ? time - 1 : 0);
+                            setTimeBreakL(time => time > 0 ? time - 1 : 0);
+                            
                         }
                         break;
-                    case 'shortBreak':
-                        setTimeBreakS(time => time > 0 ? time - 1 : 0);
-                        break;
-                    case 'longBreak':
-                        setTimeBreakL(time => time > 0 ? time - 1 : 0);
-                        break;
+                       
 
 
 
@@ -238,7 +220,7 @@ export default function Main() {
       };
 
     const AutoStartTimer = () => {
-        setAutoTrue(isAutoTrue);
+        setAutoTrue(!isAutoTrue);
 
     }
 
