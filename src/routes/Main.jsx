@@ -23,9 +23,9 @@ export default function Main() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const displaycurrentDate = currentDate.toLocaleDateString()
 
-    const [timePomo, setTimePomo] = useState(1 );
-    const [timeBreakS, setTimeBreakS] = useState(2 );
-    const [timeBreakL, setTimeBreakL] = useState(3  );
+    const [timePomo, setTimePomo] = useState(25 * 60 );
+    const [timeBreakS, setTimeBreakS] = useState(5 * 60);
+    const [timeBreakL, setTimeBreakL] = useState(15 * 60  );
     const [isTimerActive, setIsTimerActive] = useState(false);
     const [version, setVersion] = useState('pomo');
     const [minutes, setMinutes] = useState(0);
