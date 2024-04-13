@@ -1,12 +1,44 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Container, Grid, Divider, Box, Typography, TextField, Button, Select, MenuItem, InputLabel, FormControl } from "@mui/material";
 import { AddCircleOutline, CheckCircleOutline, CheckCircle, MoreVert, Settings, Assessment, Logout, Task, ArrowBackIos, ArrowForwardIos } from '@mui/icons-material';
 import { Form, Link } from "react-router-dom";
 import 'react-calendar-timeline/lib/Timeline.css';
-
+import { useNavigate } from "react-router-dom";
 import moment from 'moment';
 import { setTokenAutoRefreshEnabled } from "firebase/app-check";
+import {
+    RecoilRoot,
+    atom,
+    selector,
+    useRecoilState,
+    useRecoilValue,
+} from 'recoil';
+import { emailAtom, passwordAtom } from "../recoil/Recoil";
+import { initializeApp } from "firebase/app";
+import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
+import Webcam from "react-webcam";
 
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+    apiKey: "AIzaSyA5shfSHuaEIYom0OeAjy8Qppkrivj8ND0",
+    authDomain: "taskmanager-f333c.firebaseapp.com",
+    projectId: "taskmanager-f333c",
+    storageBucket: "taskmanager-f333c.appspot.com",
+    messagingSenderId: "637162360901",
+    appId: "1:637162360901:web:bfb56a3e7c6c490220132c",
+    measurementId: "G-9Q221LJ1N1"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const videoConstraints = {
+    width: 1280,
+    height: 720,
+    facingMode: "user"
+};
 
 export default function Main() {
 
@@ -14,9 +46,12 @@ export default function Main() {
     const [addingTask, setAddingTask] = useState(false);
     const [newName, setNewName] = useState("");
     const [newPomodoros, setNewPomodoros] = useState(0);
+    const [newDifficulty, setNewDifficulty] = useState("");
     const [editingTask, setEditingTask] = useState(-1);
     const [editName, setEditName] = useState("");
     const [editCurPom, setEditCurPom] = useState(0);
+    const [LogEmail, setLogEmail] = useRecoilState(emailAtom);
+    const [LogPw, setLogPw] = useRecoilState(emailAtom);
 
     const [currentDate, setCurrentDate] = useState(new Date());
     const displaycurrentDate = currentDate.toLocaleDateString()
@@ -33,6 +68,7 @@ export default function Main() {
     const [modalVersion, setModalVersion] = useState('');
     const OpenModal = () => setModalOpen(true);
     const CloseModal = () => setModalOpen(false);
+    const webcamRef = useRef(null);
 
 
     const [isAutoTrue, setAutoTrue] = useState(true);
@@ -41,7 +77,35 @@ export default function Main() {
     const [completedBreakS, setCompletedBreakS] = useState(0);
     const [completedBreakL, setCompletedBreakL] = useState(0);
 
-    const changeFinished = (id, newFinished) => {
+    const navigate = useNavigate();
+    // useEffect(() => {
+    //     const uploadImage = async() => {
+    //         if(webcamRef)
+    //         {
+    //             const imageSrc = webcamRef.current.getScreenshot();
+
+    //             // Send the image to the Flask server
+    //             const response = await fetch('http://127.0.0.1:5000/predict', {
+    //                 method: 'POST',
+    //                 headers: {
+    //                     'Content-Type': 'application/json',
+    //                 },
+    //                 body: JSON.stringify({ image: imageSrc }),
+    //             });
+    //         }
+    //     }
+    //     uploadImage();
+
+    // }, [webcamRef])
+
+    useEffect(() => {
+        var tempEmail = localStorage.getItem('email')
+        if (!tempEmail) {
+            navigate("/login")
+        }
+    }, [])
+
+    const changeFinished = async (id, newFinished) => {
         // Get a copy of the data array
         const newData = [...tasks];
 
@@ -54,11 +118,16 @@ export default function Main() {
 
             // Update the state with the modified array
             setTasks(newData);
-            localStorage.setItem('tasks', JSON.stringify(newData));
+            // localStorage.setItem('tasks', JSON.stringify(newData));
+
+            var tempEmail = localStorage.getItem('email');
+            await setDoc(doc(db, "tasks", tempEmail), {
+                data: JSON.stringify(newData)
+            });
         }
     }
 
-    const updatePomodoro = () => {
+    const updatePomodoro = async () => {
         // Get a copy of the data array
         const newData = [...tasks];
 
@@ -73,29 +142,46 @@ export default function Main() {
             newData[index] = { ...newData[index], curPomodoro: current_pomodoro.toString() };
             // Update the state with the modified array
             setTasks(newData);
-            localStorage.setItem('tasks', JSON.stringify(newData));
+            // localStorage.setItem('tasks', JSON.stringify(newData));
+            var tempEmail = localStorage.getItem('email');
+            await setDoc(doc(db, "tasks", tempEmail), {
+                data: JSON.stringify(newData)
+            });
         }
     }
 
-    const removeItem = (indexToRemove) => {
+    const removeItem = async (indexToRemove) => {
         // Create a copy of the current state array
         const updatedItems = [...tasks];
         // Remove the element at the specified index
         updatedItems.splice(indexToRemove, 1);
         // Update the state with the modified array
         setTasks(updatedItems);
-        localStorage.setItem('tasks', JSON.stringify(updatedItems));
+        // localStorage.setItem('tasks', JSON.stringify(updatedItems));
+        var tempEmail = localStorage.getItem('email');
+        await setDoc(doc(db, "tasks", tempEmail), {
+            data: JSON.stringify(updatedItems)
+        });
     };
 
     useEffect(() => {
-        var tasks = localStorage.getItem('tasks')
-        if (tasks) {
-            console.log(tasks)
-            setTasks(JSON.parse(tasks))
+        const getTasks = async () => {
+            var tasks = localStorage.getItem('tasks')
+            var tempEmail = localStorage.getItem('email')
+            const docRef = doc(db, "tasks", tempEmail);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                var data = docSnap.data()
+                setTasks(JSON.parse(data['data']))
+            } else {
+                // docSnap.data() will be undefined in this case
+                console.log("No such document!");
+            }
         }
+        getTasks();
     }, [])
 
-    const addNewTask = () => {
+    const addNewTask = async () => {
         // Get a copy of the data array
         const newData = [...tasks];
 
@@ -110,17 +196,23 @@ export default function Main() {
             totalPomodoro: newPomodoros,
             finished: false
         });
+        var tempEmail = localStorage.getItem('email');
+        // Add a new document in collection "cities"
+        await setDoc(doc(db, "tasks", tempEmail), {
+            data: JSON.stringify(newData)
+        });
 
         // Update the state with the modified array
         setTasks(newData);
-        localStorage.setItem('tasks', JSON.stringify(newData));
+        // localStorage.setItem('tasks', JSON.stringify(newData));
 
         setAddingTask(false);
         setNewName("");
         setNewPomodoros(0);
+        setNewDifficulty("");
     }
 
-    const editItem = (oldTaskInfo) => {
+    const editItem = async (oldTaskInfo) => {
         // Create a copy of the current state array
         const updatedItems = tasks.map(item => {
             // Check if the current item's ID matches the ID to edit
@@ -132,7 +224,11 @@ export default function Main() {
         });
         // Update the state with the modified array
         setTasks(updatedItems);
-        localStorage.setItem('tasks', JSON.stringify(updatedItems));
+        // localStorage.setItem('tasks', JSON.stringify(updatedItems));
+        var tempEmail = localStorage.getItem('email');
+        await setDoc(doc(db, "tasks", tempEmail), {
+            data: JSON.stringify(updatedItems)
+        });
         setEditName("")
         setEditCurPom(0)
         setEditingTask(-1);
@@ -148,8 +244,7 @@ export default function Main() {
             interval = setInterval(() => {
                 switch (version) {
                     case 'pomo':
-                        if(timePomo === 0)
-                        {
+                        if (timePomo === 0) {
                             updatePomodoro();
                         }
                         if (timePomo === 0 && isAutoTrue) {
@@ -274,7 +369,18 @@ export default function Main() {
 
 
     const toggleTimer = () => {
-        setIsTimerActive(!isTimerActive);
+        const newData = [...tasks];
+
+        // Find the index of the object with the given id
+        console.log(newData)
+        const index = newData.findIndex(item => item.curPomodoro != item.totalPomodoro);
+
+        if (index !== -1) {
+            setIsTimerActive(!isTimerActive);
+        }
+        else {
+            alert("No more pomodoros left to run.");
+        }
     };
 
     const changeDateBack = () => {
@@ -288,6 +394,33 @@ export default function Main() {
         nextDay.setDate(currentDate.getDate() + 1);
         setCurrentDate(nextDay);
     };
+
+    const recommendPomodoros = async () => {
+        if(newName == "")
+        {
+            alert("Please select a subject.");
+            return;
+        }
+        else if(newDifficulty == "")
+        {
+            alert("Please select how difficult this subject is.")
+            return;
+        }
+        const response = await fetch('http://127.0.0.1:5000/recommend', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        "subject": newName,
+                        "focus": "High",
+                        "difficulty": newDifficulty
+                    }),
+                });
+
+        const data = await response.json()
+        setNewPomodoros(data.recommendation)
+    }
 
     function ViewProfile() {
         window.location.href = '/profile';
@@ -345,7 +478,7 @@ export default function Main() {
         <div
             style={{
                 backgroundColor: '#ba4949',
-                height: '100vh',
+                minHeight: '100vh'
             }}
         >
             <div>
@@ -359,18 +492,19 @@ export default function Main() {
                 >
                     <div
                         style={{
-                            display: 'flex'
+                            display: 'flex',
+                            alignItems: 'center'
                         }}
                     >
                         <Task
                             sx={{
                                 color: 'white',
-                                fontSize: 50
+                                fontSize: 40
                             }}
                         />
 
                         <Typography
-                            variant="h3"
+                            variant="h4"
                             sx={{
                                 fontWeight: 'bold',
                                 color: '#ffffff',
@@ -388,7 +522,7 @@ export default function Main() {
                             gap: 30
                         }}
                     >
-                        <div
+                        {/* <div
                             style={{
                                 display: 'flex',
                                 alignItems: 'center'
@@ -412,8 +546,8 @@ export default function Main() {
                             >
                                 Report
                             </Typography>
-                        </div>
-                        <div
+                        </div> */}
+                        {/* <div
                             style={{
                                 display: 'flex',
                                 alignItems: 'center'
@@ -441,11 +575,17 @@ export default function Main() {
                                 Settings
                             </Typography>
 
-                        </div>
+                        </div> */}
                         <div
                             style={{
                                 display: 'flex',
-                                alignItems: 'center'
+                                alignItems: 'center',
+                                cursor: 'pointer'
+                            }}
+                            onClick={() => {
+                                localStorage.removeItem('email');
+                                localStorage.removeItem('password');
+                                navigate('/login')
                             }}
                         >
                             <Logout
@@ -454,7 +594,7 @@ export default function Main() {
                                 }}
                             />
                             <Typography
-                                variant='h5'
+                                variant='h6'
                                 sx={{
                                     color: 'white',
                                     fontWeight: 'bold'
@@ -546,7 +686,7 @@ export default function Main() {
                     <Button
                         sx={{
                             color: version == 'pomo' ? '#ffffff' : '#f77474',
-                            backgroundColor: version == 'pomo' ? '#f77474' : '#ffffff', 
+                            backgroundColor: version == 'pomo' ? '#f77474' : '#ffffff',
                             marignLeft: '5px',
                             marginRight: '5px'
                         }}
@@ -559,7 +699,7 @@ export default function Main() {
                     <Button
                         sx={{
                             color: version == 'shortBreak' ? '#ffffff' : '#f77474',
-                            backgroundColor: version == 'shortBreak' ? '#f77474' : '#ffffff', 
+                            backgroundColor: version == 'shortBreak' ? '#f77474' : '#ffffff',
                             marignLeft: '5px',
                             marginRight: '5px'
 
@@ -573,7 +713,7 @@ export default function Main() {
                     <Button
                         sx={{
                             color: version == 'longBreak' ? '#ffffff' : '#f77474',
-                            backgroundColor: version == 'longBreak' ? '#f77474' : '#ffffff', 
+                            backgroundColor: version == 'longBreak' ? '#f77474' : '#ffffff',
                             marignLeft: '5px',
                             marginRight: '5px'
                         }}
@@ -615,8 +755,6 @@ export default function Main() {
                                 alignItems: 'center',
                             }}
                         >
-
-
                             <Typography
                                 variant="h1"
                                 sx={{
@@ -624,33 +762,24 @@ export default function Main() {
                                     position: 'absolute',
                                     marginBottom: '100px',
                                     marginTop: '50px'
-
-
                                 }} >
 
                                 {displayTimer()}
                             </Typography>
-
                             <Button
                                 sx={{
-
                                     color: "#f77474",
                                     marginTop: '120px',
                                     backgroundColor: '#ffffff',
                                     height: '30px',
                                     width: '100px',
-
-
                                 }}
                                 onClick={
                                     toggleTimer
                                 }
                             >
                                 <p><b>{isTimerActive ? 'Pause' : 'Start'}</b></p>
-
                             </Button>
-
-
                         </div>
                     </Box>
                 </div>
@@ -662,16 +791,24 @@ export default function Main() {
                 >
                     <Grid container>
                         <Grid
-                            item xs={6}
+                            item xs={18}
                         >
                             <div
                                 style={{
-                                    fontSize: 18,
-                                    fontWeight: 'bold',
-                                    color: 'white'
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center'
                                 }}
                             >
-                                Tasks
+                                <div
+                                    style={{
+                                        fontSize: 18,
+                                        fontWeight: 'bold',
+                                        color: 'white'
+                                    }}
+                                >
+                                    Tasks
+                                </div>
                             </div>
                         </Grid>
                     </Grid>
@@ -699,6 +836,7 @@ export default function Main() {
                                             width: '100%',
                                             textAlign: 'left',
                                         }}
+                                        key={ind}
                                     >
                                         <div
                                             style={{
@@ -1019,6 +1157,31 @@ export default function Main() {
                                                 <MenuItem value={"Physics"}>Physics</MenuItem>
                                             </Select>
                                         </FormControl>
+                                        <FormControl
+                                            fullWidth
+                                            style={{
+                                                marginBottom: 20
+                                            }}
+                                        >
+
+                                        <InputLabel id="difficultylabel">How difficult is this for you?</InputLabel>
+                                            <Select
+                                                labelId="difficultylabel"
+                                                id="difficulty"
+                                                value={newDifficulty}
+                                                label="How difficult is this for you?"
+                                                onChange={(e) => {
+                                                    setNewDifficulty(e.target.value)
+                                                }}
+                                            >
+                                                <MenuItem value="">
+                                                    <em>None</em>
+                                                </MenuItem>
+                                                <MenuItem value={"Easy"}>Easy</MenuItem>
+                                                <MenuItem value={"Medium"}>Medium</MenuItem>
+                                                <MenuItem value={"Difficult"}>Difficult</MenuItem>
+                                            </Select>
+                                        </FormControl>
                                         {/* <TextField 
                                         sx={{
                                             border: 'none',
@@ -1052,29 +1215,52 @@ export default function Main() {
                                         >
                                             Est. Pomodoros
                                         </Typography>
-                                        <TextField
-                                            variant="outlined"
-                                            size="small"
-                                            sx={{
-                                                border: 'none',
-                                                "& fieldset": { border: 'none' },
-                                                borderRadius: 1,
-                                                backgroundColor: '#efefef',
-                                                width: '30%',
-                                                mt: 2
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 30
                                             }}
-                                            inputProps={{
-                                                style: {
-                                                    fontWeight: '900',
-                                                    color: 'rgb(85, 85, 85)'
-                                                }
-                                            }}
-                                            type="number"
-                                            value={newPomodoros}
-                                            onChange={(element) => {
-                                                setNewPomodoros(element.target.value)
-                                            }}
-                                        />
+                                        >
+                                            <TextField
+                                                variant="outlined"
+                                                size="small"
+                                                sx={{
+                                                    border: 'none',
+                                                    "& fieldset": { border: 'none' },
+                                                    borderRadius: 1,
+                                                    backgroundColor: '#efefef',
+                                                    width: '30%',
+                                                    mt: 2
+                                                }}
+                                                inputProps={{
+                                                    style: {
+                                                        fontWeight: '900',
+                                                        color: 'rgb(85, 85, 85)'
+                                                    }
+                                                }}
+                                                type="number"
+                                                value={newPomodoros}
+                                                onChange={(element) => {
+                                                    setNewPomodoros(element.target.value)
+                                                }}
+                                            />
+                                            <Button
+                                                variant="contained"
+                                                size="small"
+                                                sx={{
+                                                    backgroundColor: 'rgb(34, 34, 34)',
+                                                    fontSize: 12,
+                                                    fontWeight: '600',
+                                                    mt: 2
+                                                }}
+                                                onClick={() => {
+                                                    recommendPomodoros()
+                                                }}
+                                            >
+                                                Get Recommendation
+                                            </Button>
+                                        </div>
                                     </div>
                                     <div
                                         style={{
@@ -1288,6 +1474,17 @@ export default function Main() {
                     <p><b>{isAutoTrue ? 'No' : 'Yes'}</b></p>
                 </Button>
             </Modal>}
+            {/* <Webcam
+                audio={false}
+                height={720}
+                ref={webcamRef}
+                screenshotFormat="image/jpeg"
+                width={1280}
+                videoConstraints={videoConstraints}
+                style={{
+                    display: 'none'
+                }}
+            /> */}
         </div>
     )
 }

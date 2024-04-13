@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { useNavigate } from 'react-router-dom';
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
@@ -30,10 +31,22 @@ export default function Register() {
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");//for initializing a variable
 
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        var tempEmail = localStorage.getItem('email')
+        console.log(tempEmail)
+        if(tempEmail)
+        {
+            navigate("/")
+        }
+    }, [])
+
     const register = async() => {
         createUserWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
                 const user = userCredential.user;
+                navigate("/login");
             })
             .catch((error) => {
                 const errorCode = error.code; //create variable
