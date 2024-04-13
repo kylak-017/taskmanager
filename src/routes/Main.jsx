@@ -15,7 +15,7 @@ import {
 } from 'recoil';
 import { emailAtom, passwordAtom } from "../recoil/Recoil";
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
+import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import Webcam from "react-webcam";
 
 // Your web app's Firebase configuration
@@ -76,6 +76,7 @@ export default function Main() {
     const [completedPomos, setCompletedPomos] = useState(0);
     const [completedBreakS, setCompletedBreakS] = useState(0);
     const [completedBreakL, setCompletedBreakL] = useState(0);
+    const [curDocId, setCurDocId] = useState("");
 
     const navigate = useNavigate();
     // useEffect(() => {
@@ -121,8 +122,10 @@ export default function Main() {
             // localStorage.setItem('tasks', JSON.stringify(newData));
 
             var tempEmail = localStorage.getItem('email');
-            await setDoc(doc(db, "tasks", tempEmail), {
-                data: JSON.stringify(newData)
+            await setDoc(doc(db, "tasks", curDocId), {
+                data: JSON.stringify(newData),
+                email: tempEmail,
+                date: displaycurrentDate
             });
         }
     }
@@ -144,8 +147,10 @@ export default function Main() {
             setTasks(newData);
             // localStorage.setItem('tasks', JSON.stringify(newData));
             var tempEmail = localStorage.getItem('email');
-            await setDoc(doc(db, "tasks", tempEmail), {
-                data: JSON.stringify(newData)
+            await setDoc(doc(db, "tasks", curDocId), {
+                data: JSON.stringify(newData),
+                email: tempEmail,
+                date: displaycurrentDate
             });
         }
     }
@@ -159,8 +164,10 @@ export default function Main() {
         setTasks(updatedItems);
         // localStorage.setItem('tasks', JSON.stringify(updatedItems));
         var tempEmail = localStorage.getItem('email');
-        await setDoc(doc(db, "tasks", tempEmail), {
-            data: JSON.stringify(updatedItems)
+        await setDoc(doc(db, "tasks", curDocId), {
+            data: JSON.stringify(updatedItems),
+            email: tempEmail,
+            date: displaycurrentDate
         });
     };
 
@@ -168,18 +175,24 @@ export default function Main() {
         const getTasks = async () => {
             var tasks = localStorage.getItem('tasks')
             var tempEmail = localStorage.getItem('email')
-            const docRef = doc(db, "tasks", tempEmail);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                var data = docSnap.data()
-                setTasks(JSON.parse(data['data']))
-            } else {
-                // docSnap.data() will be undefined in this case
-                console.log("No such document!");
+            const q = query(collection(db, "tasks"), where("email", "==", tempEmail), where("date", '==', displaycurrentDate));
+            const querySnapshot = await getDocs(q);
+            if(querySnapshot.empty)
+            {
+                setCurDocId("");
+                setTasks([]);
+            }
+            else
+            {
+                querySnapshot.forEach((doc) => {
+                    var data = doc.data()
+                    setCurDocId(doc.id);
+                    setTasks(JSON.parse(data['data']))
+                });
             }
         }
         getTasks();
-    }, [])
+    }, [currentDate])
 
     const addNewTask = async () => {
         // Get a copy of the data array
@@ -198,9 +211,26 @@ export default function Main() {
         });
         var tempEmail = localStorage.getItem('email');
         // Add a new document in collection "cities"
-        await setDoc(doc(db, "tasks", tempEmail), {
-            data: JSON.stringify(newData)
-        });
+        // Add a new document with a generated id.
+        if(curDocId)
+        {
+            await setDoc(doc(db, "tasks", curDocId), {
+                data: JSON.stringify(newData),
+                email: tempEmail,
+                date: displaycurrentDate
+            });
+        }
+        else
+        {
+            const docRef = await addDoc(collection(db, "tasks"), {
+                data: JSON.stringify(newData),
+                email: tempEmail,
+                date: displaycurrentDate
+            });  
+        }
+        // await setDoc(doc(db, "tasks", tempEmail), {
+        //     data: JSON.stringify(newData)
+        // });
 
         // Update the state with the modified array
         setTasks(newData);
@@ -226,8 +256,10 @@ export default function Main() {
         setTasks(updatedItems);
         // localStorage.setItem('tasks', JSON.stringify(updatedItems));
         var tempEmail = localStorage.getItem('email');
-        await setDoc(doc(db, "tasks", tempEmail), {
-            data: JSON.stringify(updatedItems)
+        await setDoc(doc(db, "tasks", curDocId), {
+            data: JSON.stringify(updatedItems),
+            email: tempEmail,
+            date: displaycurrentDate
         });
         setEditName("")
         setEditCurPom(0)
@@ -522,10 +554,11 @@ export default function Main() {
                             gap: 30
                         }}
                     >
-                        {/* <div
+                        <div
                             style={{
                                 display: 'flex',
-                                alignItems: 'center'
+                                alignItems: 'center',
+                                cursor: 'pointer'
                             }}
                             onClick={
                                 OpenModal
@@ -538,7 +571,7 @@ export default function Main() {
                             />
 
                             <Typography
-                                variant="h5"
+                                variant="h6"
                                 sx={{
                                     fontWeight: 'bold',
                                     color: "#ffffff"
@@ -546,7 +579,7 @@ export default function Main() {
                             >
                                 Report
                             </Typography>
-                        </div> */}
+                        </div>
                         {/* <div
                             style={{
                                 display: 'flex',
