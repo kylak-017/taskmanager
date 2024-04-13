@@ -58,6 +58,25 @@ export default function Main() {
         }
     }
 
+    const updatePomodoro = () => {
+        // Get a copy of the data array
+        const newData = [...tasks];
+
+        // Find the index of the object with the given id
+        console.log(newData)
+        const index = newData.findIndex(item => item.curPomodoro != item.totalPomodoro);
+
+        console.log(index)
+        if (index !== -1) {
+            var current_pomodoro = parseInt(newData[index].curPomodoro) + 1
+            // Update the name property of the object at the found index
+            newData[index] = { ...newData[index], curPomodoro: current_pomodoro.toString() };
+            // Update the state with the modified array
+            setTasks(newData);
+            localStorage.setItem('tasks', JSON.stringify(newData));
+        }
+    }
+
     const removeItem = (indexToRemove) => {
         // Create a copy of the current state array
         const updatedItems = [...tasks];
@@ -129,6 +148,10 @@ export default function Main() {
             interval = setInterval(() => {
                 switch (version) {
                     case 'pomo':
+                        if(timePomo === 0)
+                        {
+                            updatePomodoro();
+                        }
                         if (timePomo === 0 && isAutoTrue) {
                             setCompletedPomos(completedPomos + 1);
                             if (completedPomos === 4) {
