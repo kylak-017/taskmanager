@@ -406,7 +406,7 @@ export default function Main() {
             alert("Please select how difficult this subject is.")
             return;
         }
-        const response = await fetch('http://127.0.0.1:5000/recommend', {
+        const response = await fetch('https://technovationbackend-d7d391d697d1.herokuapp.com/recommend', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
