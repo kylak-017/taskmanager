@@ -17,6 +17,8 @@ import { emailAtom, passwordAtom } from "../recoil/Recoil";
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import Webcam from "react-webcam";
+import { Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -171,6 +173,84 @@ export default function Main() {
         });
     };
 
+    const[dateBar, setDateBar] = useState();
+    
+    const getReport = async() =>{
+        var tempEmail = localStorage.getItem('email')
+            const q = query(collection(db, "tasks"), where("email", "==", tempEmail));
+            const querySnapshot = await getDocs(q);
+            if(querySnapshot.empty)
+            {
+                
+            }
+            else{
+                var allDates = [];
+                querySnapshot.forEach((doc) => { 
+                    var data = doc.data()
+                    if(data['email'] == tempEmail){
+                        allDates = {
+                            date: data['date'],
+                            tasks: JSON.parse(data['data'])
+                        }
+                    }
+                    
+                });
+
+                setDateBar(allDates);
+                
+
+
+            
+            }
+
+    }
+
+    ChartJS.register(
+        CategoryScale,
+        LinearScale,
+        BarElement,
+        Title,
+        Tooltip,
+        Legend
+      );
+
+    const data = {
+        labels: dateBar,
+        datasets: [
+            {
+                label: 'Daily Task Completion',
+                data: [0,5,10,20],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(153, 102, 255, 0.2)',
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                ],
+                borderWidth: 1,
+                },
+            ],
+        
+    };
+
+    const options = {
+        scales: {
+            y: {
+            beginAtZero: true
+            },
+            responsive: true,
+            maintainAspectRatio: false,
+        }
+        };
+    
+
     useEffect(() => {
         const getTasks = async () => {
             var tasks = localStorage.getItem('tasks')
@@ -184,6 +264,9 @@ export default function Main() {
             }
             else
             {
+
+                const allDates = []
+                
                 querySnapshot.forEach((doc) => {
                     var data = doc.data()
                     setCurDocId(doc.id);
@@ -222,6 +305,7 @@ export default function Main() {
         }
         else
         {
+
             const docRef = await addDoc(collection(db, "tasks"), {
                 data: JSON.stringify(newData),
                 email: tempEmail,
@@ -391,9 +475,6 @@ export default function Main() {
             case 'report':
                 setModalVersion('report');
                 break;
-            case 'logout':
-                setModalVersion('logout');
-                break;
         }
 
 
@@ -560,8 +641,12 @@ export default function Main() {
                                 alignItems: 'center',
                                 cursor: 'pointer'
                             }}
-                            onClick={
-                                OpenModal
+                      
+                            onClick={() =>{
+                                whichModal('report');
+                                OpenModal();
+
+                            }
                             }
                         >
                             <Assessment
@@ -580,13 +665,17 @@ export default function Main() {
                                 Report
                             </Typography>
                         </div>
-                        {/* <div
+                        <div
                             style={{
                                 display: 'flex',
                                 alignItems: 'center'
                             }}
                             onClick={
-                                OpenModal
+                                () =>{
+                                    whichModal('settings');
+                                    OpenModal();
+    
+                                }
                             }
                         >
 
@@ -608,7 +697,9 @@ export default function Main() {
                                 Settings
                             </Typography>
 
-                        </div> */}
+                        </div>
+
+
                         <div
                             style={{
                                 display: 'flex',
@@ -1381,7 +1472,12 @@ export default function Main() {
                     </Grid>
                 </Box>
             </Container>
-            {isModalOpen && <Modal>
+
+
+
+
+
+            {isModalOpen && modalVersion === 'report' && <Modal>
 
                 <Button
                     onClick={
@@ -1399,16 +1495,35 @@ export default function Main() {
                     <b>X</b>
                 </Button>
 
-                <Typography>
+                <Typography
+                    sx={{
+                        marginTop: '20px',
+                        color: '#403d3d',
+                        fontSize: '19px',
+                        fontWeight: 'bold',
+                        display: 'inline-block',
+
+                    }}
+                >
                     Completed Pomos:
                 </Typography>
-                <Typography>
+                <Typography
+                sx = {{
+                        marginTop: '20px',
+                        color: '#403d3d',
+                        fontSize: '19px',
+                        fontWeight: 'bold',
+                        display:'inline-block',
+                        marginLeft: '5px',
+                }}
+                >
                     {completedPomos}
                 </Typography>
+                <Bar data={data} options={options} />
             </Modal>}
 
 
-            {isModalOpen && <Modal>
+            {isModalOpen && modalVersion === 'settings' && <Modal>
 
                 <Button
                     onClick={
@@ -1427,6 +1542,8 @@ export default function Main() {
 
                     <b>X</b>
                 </Button>
+
+
                 <Typography
                     sx={{
                         color: '#ba4949',
@@ -1507,6 +1624,9 @@ export default function Main() {
                     <p><b>{isAutoTrue ? 'No' : 'Yes'}</b></p>
                 </Button>
             </Modal>}
+
+
+
             {/* <Webcam
                 audio={false}
                 height={720}
