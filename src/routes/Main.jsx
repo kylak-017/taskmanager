@@ -79,25 +79,17 @@ export default function Main() {
     const [curDocId, setCurDocId] = useState("");
 
     const navigate = useNavigate();
-    // useEffect(() => {
-    //     const uploadImage = async() => {
-    //         if(webcamRef)
-    //         {
-    //             const imageSrc = webcamRef.current.getScreenshot();
-
-    //             // Send the image to the Flask server
-    //             const response = await fetch('http://127.0.0.1:5000/predict', {
-    //                 method: 'POST',
-    //                 headers: {
-    //                     'Content-Type': 'application/json',
-    //                 },
-    //                 body: JSON.stringify({ image: imageSrc }),
-    //             });
-    //         }
-    //     }
-    //     uploadImage();
-
-    // }, [webcamRef])
+    const capture = React.useCallback(async() => {
+        const imageSrc = webcamRef.current.getScreenshot();
+        // Send the image to the Flask server
+        const response = await fetch('http://127.0.0.1:5000/predict', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ image: imageSrc }),
+        });
+      }, [webcamRef]);
 
     useEffect(() => {
         var tempEmail = localStorage.getItem('email')
@@ -513,6 +505,12 @@ export default function Main() {
                 minHeight: '100vh'
             }}
         >
+{/* 
+            <Webcam
+                audio={false}
+                ref={webcamRef}
+                screenshotFormat="image/jpeg"
+            /> */}
             <div>
                 <div
                     style={{
@@ -554,7 +552,7 @@ export default function Main() {
                             gap: 30
                         }}
                     >
-                        <div
+                        {/* <div
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -579,7 +577,7 @@ export default function Main() {
                             >
                                 Report
                             </Typography>
-                        </div>
+                        </div> */}
                         {/* <div
                             style={{
                                 display: 'flex',
@@ -1507,17 +1505,20 @@ export default function Main() {
                     <p><b>{isAutoTrue ? 'No' : 'Yes'}</b></p>
                 </Button>
             </Modal>}
-            {/* <Webcam
-                audio={false}
-                height={720}
-                ref={webcamRef}
-                screenshotFormat="image/jpeg"
-                width={1280}
-                videoConstraints={videoConstraints}
-                style={{
-                    display: 'none'
-                }}
-            /> */}
+
+            {/* <Button
+                    sx={{
+                        color: version == 'longBreak' ? '#ffffff' : '#f77474',
+                        backgroundColor: version == 'longBreak' ? '#f77474' : '#ffffff',
+                        marignLeft: '5px',
+                        marginRight: '5px'
+                    }}
+
+                    onClick={capture
+                    }
+                >
+                    <b>Long Break </b>
+            </Button> */}
         </div>
     )
 }
