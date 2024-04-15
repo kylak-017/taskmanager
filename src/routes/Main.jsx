@@ -554,7 +554,7 @@ export default function Main() {
                             gap: 30
                         }}
                     >
-                        <div
+                        {/* <div
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -579,7 +579,7 @@ export default function Main() {
                             >
                                 Report
                             </Typography>
-                        </div>
+                        </div> */}
                         {/* <div
                             style={{
                                 display: 'flex',
