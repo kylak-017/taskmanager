@@ -79,17 +79,31 @@ export default function Main() {
     const [curDocId, setCurDocId] = useState("");
 
     const navigate = useNavigate();
-    const capture = React.useCallback(async() => {
-        const imageSrc = webcamRef.current.getScreenshot();
-        // Send the image to the Flask server
-        const response = await fetch('http://127.0.0.1:5000/predict', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ image: imageSrc }),
-        });
-      }, [webcamRef]);
+    // const capture = async() => {
+    //     const imageSrc = webcamRef.current.getScreenshot();
+    //     // Send the image to the Flask server
+    //     const response = await fetch('http://127.0.0.1:5000/predict', {
+    //         method: 'POST',
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //         },
+    //         body: JSON.stringify({ image: imageSrc }),
+    //     });
+    //     if(response.ok)
+    //     {
+    //         const data = await response.json();
+    //         var prediction = data['prediction'];
+    //         var tempEmail = localStorage.getItem('email')
+    //         const newData = [...tasks];
+    //         const index = newData.findIndex(item => item.curPomodoro != item.totalPomodoro);
+    //         const docRef = await addDoc(collection(db, "focus"), {
+    //             prediction: prediction,
+    //             email: tempEmail,
+    //             subject: newData[index]['title']
+    //         });  
+    //     }
+
+    //   }
 
     useEffect(() => {
         var tempEmail = localStorage.getItem('email')
@@ -165,7 +179,6 @@ export default function Main() {
 
     useEffect(() => {
         const getTasks = async () => {
-            var tasks = localStorage.getItem('tasks')
             var tempEmail = localStorage.getItem('email')
             const q = query(collection(db, "tasks"), where("email", "==", tempEmail), where("date", '==', displaycurrentDate));
             const querySnapshot = await getDocs(q);
@@ -396,7 +409,6 @@ export default function Main() {
         const newData = [...tasks];
 
         // Find the index of the object with the given id
-        console.log(newData)
         const index = newData.findIndex(item => item.curPomodoro != item.totalPomodoro);
 
         if (index !== -1) {
@@ -505,11 +517,16 @@ export default function Main() {
                 minHeight: '100vh'
             }}
         >
-{/* 
-            <Webcam
+
+            {/* <Webcam
                 audio={false}
                 ref={webcamRef}
                 screenshotFormat="image/jpeg"
+                style={{
+                    visible: 'hidden',
+                    position: 'absolute',
+                    zIndex: -1
+                }}
             /> */}
             <div>
                 <div
@@ -1505,20 +1522,6 @@ export default function Main() {
                     <p><b>{isAutoTrue ? 'No' : 'Yes'}</b></p>
                 </Button>
             </Modal>}
-
-            {/* <Button
-                    sx={{
-                        color: version == 'longBreak' ? '#ffffff' : '#f77474',
-                        backgroundColor: version == 'longBreak' ? '#f77474' : '#ffffff',
-                        marignLeft: '5px',
-                        marginRight: '5px'
-                    }}
-
-                    onClick={capture
-                    }
-                >
-                    <b>Long Break </b>
-            </Button> */}
         </div>
     )
 }
