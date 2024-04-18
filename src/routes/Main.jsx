@@ -15,7 +15,7 @@ import {
 } from 'recoil';
 import { emailAtom, passwordAtom } from "../recoil/Recoil";
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, where, getDocs, orderBy } from "firebase/firestore";
+import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, where, getDocs, orderBy, limit } from "firebase/firestore";
 import Webcam from "react-webcam";
 import {
     Chart as ChartJS,
@@ -250,25 +250,36 @@ export default function Main() {
 
     }
 
-    // useEffect(() => {
-    //     const uploadImage = async() => {
-    //         if(webcamRef)
-    //         {
-    //             const imageSrc = webcamRef.current.getScreenshot();
+    const capture = async() => {
+        const imageSrc = webcamRef.current.getScreenshot();
+        // Send the image to the Flask server
+        const response = await fetch('https://technovationbackend-d7d391d697d1.herokuapp.com/predict', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ image: imageSrc }),
+        });
+        if(response.ok)
+        {
+            const data = await response.json();
+            var prediction = data['prediction'];
+            console.log(prediction)
+            var tempEmail = localStorage.getItem('email')
+            const newData = [...tasks];
+            const index = newData.findIndex(item => item.curPomodoro != item.totalPomodoro);
+            if(index != -1)
+            {
+                const docRef = await addDoc(collection(db, "focus"), {
+                    prediction: prediction,
+                    email: tempEmail,
+                    subject: newData[index]['title'],
+                    date: new Date()
+                });  
+            }
+        }
 
-    //             // Send the image to the Flask server
-    //             const response = await fetch('http://127.0.0.1:5000/predict', {
-    //                 method: 'POST',
-    //                 headers: {
-    //                     'Content-Type': 'application/json',
-    //                 },
-    //                 body: JSON.stringify({ image: imageSrc }),
-    //             });
-    //         }
-    //     }
-    //     uploadImage();
-
-    // }, [webcamRef])
+      }
 
 
     useEffect(() => {
@@ -449,6 +460,10 @@ export default function Main() {
                         if (timePomo === 0) {
                             updatePomodoro();
                         }
+                        if(timePomo % 300 == 0)
+                        {
+                            // capture();
+                        }
                         if (timePomo === 0 && isAutoTrue) {
                             setCompletedPomos(completedPomos + 1);
                             if (completedPomos === 4) {
@@ -554,6 +569,18 @@ export default function Main() {
     }
 
     const toggleTimer = () => {
+
+        navigator.permissions.query({ name: 'camera' })
+        .then((permissionObj) => {
+            if(permissionObj.state == 'denied')
+            {
+                alert("You need to allow camera permissions to get pomodoro recommendations.")
+            }
+        })
+        .catch((error) => {
+            console.log('Got error :', error);
+        });
+
         const newData = [...tasks];
 
         // Find the index of the object with the given id
@@ -589,20 +616,48 @@ export default function Main() {
             alert("Please select how difficult this subject is.")
             return;
         }
-        const response = await fetch('https://technovationbackend-d7d391d697d1.herokuapp.com/recommend', {
+        var tasks = localStorage.getItem('tasks')
+        var tempEmail = localStorage.getItem('email')
+        setReportLoading(true);
+        const q = query(collection(db, "focus"), where("email", "==", tempEmail), where("subject", "==", "newName"), orderBy('date', 'desc'), limit(1));
+        const querySnapshot = await getDocs(q);
+        var tempArray = []
+        var totalPomodoro = 0
+        var days = 0
+        var dateArray = []
+        var tempOutput = []
+        var subjects = []
+        var trend = []
+        if (querySnapshot.empty) {
+            alert("You need to finish one pomodoro with this subject to get a recommendation.")
+        }
+        else {
+            var newFocus = ""
+            querySnapshot.forEach((doc) => {
+                var data = doc.data()
+                if(data['prediction'] == 0)
+                {
+                    newFocus = "High"
+                }
+                else
+                {
+                    newFocus = "Low"
+                }
+            });
+            const response = await fetch('https://technovationbackend-d7d391d697d1.herokuapp.com/recommend', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
                 "subject": newName,
-                "focus": "High",
+                "focus": newFocus,
                 "difficulty": newDifficulty
             }),
         });
-
         const data = await response.json()
         setNewPomodoros(data.recommendation)
+        }
     }
 
     function ViewProfile() {
@@ -665,6 +720,16 @@ export default function Main() {
                 minHeight: '100vh'
             }}
         >
+            <Webcam
+                audio={false}
+                ref={webcamRef}
+                screenshotFormat="image/jpeg"
+                style={{
+                    visible: 'hidden',
+                    position: 'absolute',
+                    zIndex: -1
+                }}
+            />
             <div>
                 <div
                     style={{
@@ -1726,17 +1791,6 @@ export default function Main() {
 
 
             </Modal>}
-            {/* <Webcam
-                audio={false}
-                height={720}
-                ref={webcamRef}
-                screenshotFormat="image/jpeg"
-                width={1280}
-                videoConstraints={videoConstraints}
-                style={{
-                    display: 'none'
-                }}
-            /> */}
         </div>
     )
 }
