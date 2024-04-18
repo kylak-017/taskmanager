@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Container, Grid, Divider, Box, Typography, TextField, Button, Select, MenuItem, InputLabel, FormControl } from "@mui/material";
-import { AddCircleOutline, CheckCircleOutline, CheckCircle, MoreVert, Settings, Assessment, Logout, Task, ArrowBackIos, ArrowForwardIos } from '@mui/icons-material';
+import { Container, Grid, Divider, Box, Typography, TextField, Button, Select, MenuItem, InputLabel, FormControl, CircularProgress } from "@mui/material";
+import { AddCircleOutline, CheckCircleOutline, CheckCircle, MoreVert, Settings, Assessment, Logout, Task, ArrowBackIos, ArrowForwardIos, CloseOutlined } from '@mui/icons-material';
 import { Form, Link } from "react-router-dom";
 import 'react-calendar-timeline/lib/Timeline.css';
 import { useNavigate } from "react-router-dom";
@@ -15,8 +15,19 @@ import {
 } from 'recoil';
 import { emailAtom, passwordAtom } from "../recoil/Recoil";
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, where, getDocs } from "firebase/firestore";
+import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, where, getDocs, orderBy } from "firebase/firestore";
 import Webcam from "react-webcam";
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -39,6 +50,18 @@ const videoConstraints = {
     height: 720,
     facingMode: "user"
 };
+
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend
+);
+
+
 
 export default function Main() {
 
@@ -64,11 +87,18 @@ export default function Main() {
     const [minutes, setMinutes] = useState(0);
     const [seconds, setSeconds] = useState(0);
 
+    const [totPomCompleted, setTotPomCompleted] = useState(0);
+    const [favSubject, setFavSubject] = useState('');
+    const [focusTrend, setFocusTrend] = useState('');
+    const [numDays, setNumDays] = useState(0);
+
     const [isModalOpen, setModalOpen] = useState(false);
     const [modalVersion, setModalVersion] = useState('');
     const OpenModal = () => setModalOpen(true);
     const CloseModal = () => setModalOpen(false);
     const webcamRef = useRef(null);
+    const [reportLoading, setReportLoading] = useState(false);
+    const [pomLoading, setPomLoading] = useState(false);
 
 
     const [isAutoTrue, setAutoTrue] = useState(true);
@@ -77,8 +107,149 @@ export default function Main() {
     const [completedBreakS, setCompletedBreakS] = useState(0);
     const [completedBreakL, setCompletedBreakL] = useState(0);
     const [curDocId, setCurDocId] = useState("");
-
+    const [dataNeed, setDataNeed] = useState([]);
+    const [labels, setLabels] = useState([])
     const navigate = useNavigate();
+
+    const options = {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+            title: {
+                display: true,
+                text: 'Pomodoros Completed Trend',
+            },
+        },
+    };
+
+
+
+    const data = {
+        labels,
+        datasets: [
+            {
+                label: 'Pomodoros',
+                data: dataNeed,
+                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(255, 99, 132, 0.5)',
+            }
+        ],
+    };
+
+    function findMostFrequent(textArray) {
+        // Create an object to hold the count of each text
+        const occurrences = {};
+        let mostFrequentText = null;
+        let maxCount = 0;
+
+        // Iterate through each text in the array
+        for (const text of textArray) {
+            // Increment the count for each text in the occurrences object
+            occurrences[text] = (occurrences[text] || 0) + 1;
+
+            // Check if this count is the highest so far
+            if (occurrences[text] > maxCount) {
+                maxCount = occurrences[text];
+                mostFrequentText = text;
+            }
+        }
+
+        // Return the text with the highest occurrence
+        return mostFrequentText;
+    }
+
+    function calculateBestFitSlope(numbers) {
+        // Initialize variables for the sum of x, y, x*y, and x^2
+        let sumX = 0;
+        let sumY = 0;
+        let sumXY = 0;
+        let sumX2 = 0;
+
+        // Calculate the length of the numbers array
+        const n = numbers.length;
+
+        // Iterate through the array and calculate sums
+        for (let i = 0; i < n; i++) {
+            const x = i; // The index is the x value
+            const y = numbers[i]; // The current number is the y value
+
+            // Calculate sums
+            sumX += x;
+            sumY += y;
+            sumXY += x * y;
+            sumX2 += x * x;
+        }
+
+        // Calculate the mean (average) values of x and y
+        const meanX = sumX / n;
+        const meanY = sumY / n;
+
+        // Calculate the slope using the formula
+        const numerator = sumXY - n * meanX * meanY;
+        const denominator = sumX2 - n * meanX * meanX;
+
+        const slope = numerator / denominator;
+
+        // Return the calculated slope
+        return slope;
+    }
+
+    const getAllData = async () => {
+        var tasks = localStorage.getItem('tasks')
+        var tempEmail = localStorage.getItem('email')
+        setReportLoading(true);
+        const q = query(collection(db, "tasks"), where("email", "==", tempEmail), orderBy('date'));
+        const querySnapshot = await getDocs(q);
+        var tempArray = []
+        var totalPomodoro = 0
+        var days = 0
+        var dateArray = []
+        var tempOutput = []
+        var subjects = []
+        var trend = []
+        querySnapshot.forEach((doc) => {
+            var data = doc.data()
+            var tempDict = {
+                id: doc.id,
+                data: JSON.parse(data['data']),
+                date: data['date']
+            }
+            var pomData = JSON.parse(data['data'])
+            var tempPom = 0
+            days += 1
+            dateArray.push(data['date'])
+            var count = 0
+            var tempPomCompleted = 0
+            pomData.forEach((el, ind) => {
+                totalPomodoro += parseInt(el['curPomodoro'])
+                subjects.push(el['title'])
+                tempPom += parseInt(el['totalPomodoro'])
+                count += 1
+                tempPomCompleted += parseInt(el['curPomodoro'])
+            })
+            trend.push((tempPom / count))
+            tempArray.push(tempDict)
+            tempOutput.push(tempPomCompleted)
+        });
+        var favoriteSubject = findMostFrequent(subjects)
+        var slope = calculateBestFitSlope(trend);
+        setTotPomCompleted(totalPomodoro);
+        setFavSubject(favoriteSubject);
+        if (slope > 0) {
+            setFocusTrend("Increasing")
+        }
+        else {
+            setFocusTrend("Decreasing")
+        }
+        setNumDays(days)
+        setLabels(dateArray)
+        setDataNeed(tempOutput)
+        setReportLoading(false);
+
+    }
+
     // useEffect(() => {
     //     const uploadImage = async() => {
     //         if(webcamRef)
@@ -98,6 +269,7 @@ export default function Main() {
     //     uploadImage();
 
     // }, [webcamRef])
+
 
     useEffect(() => {
         var tempEmail = localStorage.getItem('email')
@@ -173,23 +345,23 @@ export default function Main() {
 
     useEffect(() => {
         const getTasks = async () => {
+            setPomLoading(true);
             var tasks = localStorage.getItem('tasks')
             var tempEmail = localStorage.getItem('email')
             const q = query(collection(db, "tasks"), where("email", "==", tempEmail), where("date", '==', displaycurrentDate));
             const querySnapshot = await getDocs(q);
-            if(querySnapshot.empty)
-            {
+            if (querySnapshot.empty) {
                 setCurDocId("");
                 setTasks([]);
             }
-            else
-            {
+            else {
                 querySnapshot.forEach((doc) => {
                     var data = doc.data()
                     setCurDocId(doc.id);
                     setTasks(JSON.parse(data['data']))
                 });
             }
+            setPomLoading(false);
         }
         getTasks();
     }, [currentDate])
@@ -212,21 +384,19 @@ export default function Main() {
         var tempEmail = localStorage.getItem('email');
         // Add a new document in collection "cities"
         // Add a new document with a generated id.
-        if(curDocId)
-        {
+        if (curDocId) {
             await setDoc(doc(db, "tasks", curDocId), {
                 data: JSON.stringify(newData),
                 email: tempEmail,
                 date: displaycurrentDate
             });
         }
-        else
-        {
+        else {
             const docRef = await addDoc(collection(db, "tasks"), {
                 data: JSON.stringify(newData),
                 email: tempEmail,
                 date: displaycurrentDate
-            });  
+            });
         }
         // await setDoc(doc(db, "tasks", tempEmail), {
         //     data: JSON.stringify(newData)
@@ -383,23 +553,6 @@ export default function Main() {
 
     }
 
-    const whichModal = (whichModalVersion) => {
-        switch (whichModalVersion) {
-            case 'settings':
-                setModalVersion('settings');
-                break;
-            case 'report':
-                setModalVersion('report');
-                break;
-            case 'logout':
-                setModalVersion('logout');
-                break;
-        }
-
-
-    }
-
-
     const toggleTimer = () => {
         const newData = [...tasks];
 
@@ -428,27 +581,25 @@ export default function Main() {
     };
 
     const recommendPomodoros = async () => {
-        if(newName == "")
-        {
+        if (newName == "") {
             alert("Please select a subject.");
             return;
         }
-        else if(newDifficulty == "")
-        {
+        else if (newDifficulty == "") {
             alert("Please select how difficult this subject is.")
             return;
         }
         const response = await fetch('https://technovationbackend-d7d391d697d1.herokuapp.com/recommend', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ 
-                        "subject": newName,
-                        "focus": "High",
-                        "difficulty": newDifficulty
-                    }),
-                });
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                "subject": newName,
+                "focus": "High",
+                "difficulty": newDifficulty
+            }),
+        });
 
         const data = await response.json()
         setNewPomodoros(data.recommendation)
@@ -489,12 +640,13 @@ export default function Main() {
     };
 
     const modalContentStyle = {
-        backgroundColor: '#fefefe',
-        margin: '15% auto',
+        backgroundColor: '#f6f6f6',
+        margin: '1% auto',
         padding: '20px',
         border: '1px solid #888',
         width: '80%',
-        maxWidth: '500px', // Could be any max-width
+        maxWidth: '750px', // Could be any max-width
+        borderRadius: '10px'
     };
 
     const closeButtonStyle = {
@@ -554,15 +706,16 @@ export default function Main() {
                             gap: 30
                         }}
                     >
-                        {/* <div
+                        <div
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 cursor: 'pointer'
                             }}
-                            onClick={
-                                OpenModal
-                            }
+                            onClick={() => {
+                                getAllData();
+                                OpenModal();
+                            }}
                         >
                             <Assessment
                                 sx={{
@@ -579,7 +732,7 @@ export default function Main() {
                             >
                                 Report
                             </Typography>
-                        </div> */}
+                        </div>
                         {/* <div
                             style={{
                                 display: 'flex',
@@ -852,370 +1005,385 @@ export default function Main() {
                             marginBottom: 10
                         }}
                     />
-                    <Grid
-                        container
-                        sx={{
-                            gap: 1
-                        }}
-                    >
-                        {
-                            tasks.map((el, ind) => (
-                                ind == editingTask ?
-                                    <Box
-                                        component="section"
-                                        sx={{
-                                            borderRadius: 2,
-                                            backgroundColor: 'white',
-                                            width: '100%',
-                                            textAlign: 'left',
-                                        }}
-                                        key={ind}
-                                    >
-                                        <div
-                                            style={{
-                                                padding: 20
-                                            }}
-                                        >
-                                            <FormControl
-                                                fullWidth
-                                                style={{
-                                                    marginBottom: 20
+                    {
+                        pomLoading ?
+                            <div
+                                style={{
+                                    width: '100%',
+                                    textAlign: 'center'
+                                }}
+                            >
+                                <CircularProgress 
+                                    sx={{
+                                        color: 'white'
+                                    }}
+                                />
+                            </div>
+                            :
+                            <Grid
+                                container
+                                sx={{
+                                    gap: 1
+                                }}
+                            >
+                                {
+                                    tasks.map((el, ind) => (
+                                        ind == editingTask ?
+                                            <Box
+                                                component="section"
+                                                sx={{
+                                                    borderRadius: 2,
+                                                    backgroundColor: 'white',
+                                                    width: '100%',
+                                                    textAlign: 'left',
                                                 }}
+                                                key={ind}
                                             >
-                                                <InputLabel id="editBox">What are you studying?</InputLabel>
-                                                <Select
-                                                    labelId="editBox"
-                                                    id="editBox"
-                                                    value={editName}
-                                                    label="What are you studying?"
-                                                    onChange={(e) => {
-                                                        setEditName(e.target.value)
+                                                <div
+                                                    style={{
+                                                        padding: 20
                                                     }}
                                                 >
-                                                    <MenuItem value="">
-                                                        <em>None</em>
-                                                    </MenuItem>
-                                                    <MenuItem value={"Math"}>Math</MenuItem>
-                                                    <MenuItem value={"Science"}>Science</MenuItem>
-                                                    <MenuItem value={"Literature"}>Literature</MenuItem>
-                                                    <MenuItem value={"History"}>History</MenuItem>
-                                                    <MenuItem value={"Computer Science"}>Computer Science</MenuItem>
-                                                    <MenuItem value={"Art"}>Art</MenuItem>
-                                                    <MenuItem value={"Geography"}>Geography</MenuItem>
-                                                    <MenuItem value={"Music"}>Music</MenuItem>
-                                                    <MenuItem value={"Physics"}>Physics</MenuItem>
-                                                </Select>
-                                            </FormControl>
+                                                    <FormControl
+                                                        fullWidth
+                                                        style={{
+                                                            marginBottom: 20
+                                                        }}
+                                                    >
+                                                        <InputLabel id="editBox">What are you studying?</InputLabel>
+                                                        <Select
+                                                            labelId="editBox"
+                                                            id="editBox"
+                                                            value={editName}
+                                                            label="What are you studying?"
+                                                            onChange={(e) => {
+                                                                setEditName(e.target.value)
+                                                            }}
+                                                        >
+                                                            <MenuItem value="">
+                                                                <em>None</em>
+                                                            </MenuItem>
+                                                            <MenuItem value={"Math"}>Math</MenuItem>
+                                                            <MenuItem value={"Science"}>Science</MenuItem>
+                                                            <MenuItem value={"Literature"}>Literature</MenuItem>
+                                                            <MenuItem value={"History"}>History</MenuItem>
+                                                            <MenuItem value={"Computer Science"}>Computer Science</MenuItem>
+                                                            <MenuItem value={"Art"}>Art</MenuItem>
+                                                            <MenuItem value={"Geography"}>Geography</MenuItem>
+                                                            <MenuItem value={"Music"}>Music</MenuItem>
+                                                            <MenuItem value={"Physics"}>Physics</MenuItem>
+                                                        </Select>
+                                                    </FormControl>
+                                                    <div
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: 10
+                                                        }}
+                                                    >
+                                                        <div
+                                                            style={{
+                                                                flex: 1
+                                                            }}
+                                                        >
+                                                            <Typography
+                                                                variant="subtitle2"
+                                                                sx={{
+                                                                    fontWeight: 'bold',
+                                                                    textAlign: 'left',
+                                                                    color: 'rgb(85, 85, 85)'
+                                                                }}
+                                                            >
+                                                                Current Pomodoro
+                                                            </Typography>
+                                                            <TextField
+                                                                variant="outlined"
+                                                                size="small"
+                                                                sx={{
+                                                                    border: 'none',
+                                                                    "& fieldset": { border: 'none' },
+                                                                    borderRadius: 1,
+                                                                    backgroundColor: '#efefef',
+                                                                    width: '100%',
+                                                                    mt: 2
+                                                                }}
+                                                                inputProps={{
+                                                                    style: {
+                                                                        fontWeight: '900',
+                                                                        color: 'rgb(85, 85, 85)'
+                                                                    }
+                                                                }}
+                                                                type="number"
+                                                                value={editCurPom}
+                                                                onChange={(element) => {
+                                                                    setEditCurPom(element.target.value)
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <div
+                                                            style={{
+                                                                flex: 1
+                                                            }}
+                                                        >
+                                                            <Typography
+                                                                variant="subtitle2"
+                                                                sx={{
+                                                                    fontWeight: 'bold',
+                                                                    textAlign: 'left',
+                                                                    color: 'rgb(85, 85, 85)'
+                                                                }}
+                                                            >
+                                                                Target Pomodoros
+                                                            </Typography>
+                                                            <TextField
+                                                                disabled
+                                                                variant="outlined"
+                                                                size="small"
+                                                                sx={{
+                                                                    border: 'none',
+                                                                    "& fieldset": { border: 'none' },
+                                                                    borderRadius: 1,
+                                                                    backgroundColor: '#efefef',
+                                                                    width: '100%',
+                                                                    mt: 2
+                                                                }}
+                                                                inputProps={{
+                                                                    style: {
+                                                                        fontWeight: '900',
+                                                                        color: 'rgb(85, 85, 85)'
+                                                                    }
+                                                                }}
+                                                                type="number"
+                                                                value={el.totalPomodoro}
+                                                                onChange={(element) => {
+                                                                    setNewPomodoros(element.target.value)
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div
+                                                    style={{
+                                                        backgroundColor: '#efefef',
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        borderBottomLeftRadius: 8,
+                                                        borderBottomRightRadius: 8,
+                                                        padding: 10
+                                                    }}
+                                                >
+                                                    <div>
+                                                        <Button
+                                                            variant="text"
+                                                            color="error"
+                                                            size="small"
+                                                            sx={{
+                                                                fontSize: 12,
+                                                                fontWeight: 'bold',
+                                                                mr: 1
+                                                            }}
+                                                            onClick={() => {
+                                                                removeItem(ind)
+                                                                setEditName("")
+                                                                setEditCurPom(0)
+                                                                setEditingTask(-1);
+                                                            }}
+                                                        >
+                                                            Delete
+                                                        </Button>
+                                                    </div>
+                                                    <div>
+                                                        <Button
+                                                            variant="text"
+                                                            size="small"
+                                                            sx={{
+                                                                color: 'rgb(136, 136, 136)',
+                                                                fontSize: 12,
+                                                                fontWeight: 'bold',
+                                                                mr: 1
+                                                            }}
+                                                            onClick={() => {
+                                                                setEditName("")
+                                                                setEditCurPom(0)
+                                                                setEditingTask(-1);
+                                                            }}
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                        <Button
+                                                            variant="contained"
+                                                            size="small"
+                                                            sx={{
+                                                                backgroundColor: 'rgb(34, 34, 34)',
+                                                                fontSize: 12,
+                                                                fontWeight: '600'
+                                                            }}
+                                                            onClick={() => {
+                                                                editItem(el)
+                                                            }}
+                                                        >
+                                                            Save
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </Box>
+                                            :
+                                            <Box
+                                                key={ind}
+                                                component="section"
+                                                sx={{
+                                                    px: 1,
+                                                    py: 2,
+                                                    borderRadius: 2,
+                                                    backgroundColor: 'white',
+                                                    cursor: 'pointer',
+                                                    width: '100%',
+                                                    textAlign: 'center'
+                                                }}>
+                                                <Grid
+                                                    container
+                                                    justifyContent={'space-between'}
+                                                    alignItems={'center'}
+                                                >
+                                                    <Grid
+                                                        item
+                                                        sx={{
+                                                            display: 'flex',
+                                                            alignItems: 'center'
+                                                        }}
+                                                    >
+                                                        <div
+                                                            style={{
+                                                                display: 'flex'
+                                                            }}
+                                                        >
+                                                            <CheckCircle
+                                                                sx={{
+                                                                    color: el.curPomodoro == el.totalPomodoro ? 'rgb(186, 73, 73)' : 'rgb(223, 223, 223)',
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <div
+                                                            style={{
+                                                                color: 'rgb(85, 85, 85)',
+                                                                fontWeight: 'bold',
+                                                                fontSize: 15,
+                                                                marginLeft: 5
+                                                            }}
+                                                        >
+                                                            {el.title}
+                                                        </div>
+                                                    </Grid>
+                                                    <Grid
+                                                        item
+                                                        sx={{
+                                                            display: 'flex',
+                                                            alignItems: 'center'
+                                                        }}
+                                                    >
+                                                        <div
+                                                            style={{
+                                                                color: 'rgb(170, 170, 170)',
+                                                                fontWeight: 'bold',
+                                                                fontSize: 13
+                                                            }}
+                                                        >
+                                                            {el.curPomodoro}/{el.totalPomodoro}
+                                                        </div>
+                                                        <div
+                                                            onClick={() => {
+                                                                setEditName(el.title)
+                                                                setEditCurPom(el.curPomodoro)
+                                                                setEditingTask(ind);
+                                                            }}
+                                                        >
+                                                            <MoreVert
+                                                                sx={{
+                                                                    marginLeft: 0.5,
+                                                                    borderRadius: 2,
+                                                                    ":hover": {
+                                                                        backgroundColor: 'rgba(0, 0, 0, 0.3)'
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    </Grid>
+                                                </Grid>
+                                            </Box>
+                                    ))
+                                }
+                                {
+                                    addingTask ?
+                                        <Box
+                                            component="section"
+                                            sx={{
+                                                borderRadius: 2,
+                                                backgroundColor: 'white',
+                                                width: '100%',
+                                                textAlign: 'left',
+                                            }}
+                                        >
                                             <div
                                                 style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 10
+                                                    padding: 20
                                                 }}
                                             >
-                                                <div
+                                                <FormControl
+                                                    fullWidth
                                                     style={{
-                                                        flex: 1
+                                                        marginBottom: 20
                                                     }}
                                                 >
-                                                    <Typography
-                                                        variant="subtitle2"
-                                                        sx={{
-                                                            fontWeight: 'bold',
-                                                            textAlign: 'left',
-                                                            color: 'rgb(85, 85, 85)'
+                                                    <InputLabel id="demo-simple-select-label">What are you studying?</InputLabel>
+                                                    <Select
+                                                        labelId="demo-simple-select-label"
+                                                        id="demo-simple-select"
+                                                        value={newName}
+                                                        label="What are you studying?"
+                                                        onChange={(e) => {
+                                                            setNewName(e.target.value)
                                                         }}
                                                     >
-                                                        Current Pomodoro
-                                                    </Typography>
-                                                    <TextField
-                                                        variant="outlined"
-                                                        size="small"
-                                                        sx={{
-                                                            border: 'none',
-                                                            "& fieldset": { border: 'none' },
-                                                            borderRadius: 1,
-                                                            backgroundColor: '#efefef',
-                                                            width: '100%',
-                                                            mt: 2
-                                                        }}
-                                                        inputProps={{
-                                                            style: {
-                                                                fontWeight: '900',
-                                                                color: 'rgb(85, 85, 85)'
-                                                            }
-                                                        }}
-                                                        type="number"
-                                                        value={editCurPom}
-                                                        onChange={(element) => {
-                                                            setEditCurPom(element.target.value)
-                                                        }}
-                                                    />
-                                                </div>
-                                                <div
+                                                        <MenuItem value="">
+                                                            <em>None</em>
+                                                        </MenuItem>
+                                                        <MenuItem value={"Math"}>Math</MenuItem>
+                                                        <MenuItem value={"Science"}>Science</MenuItem>
+                                                        <MenuItem value={"Literature"}>Literature</MenuItem>
+                                                        <MenuItem value={"History"}>History</MenuItem>
+                                                        <MenuItem value={"Computer Science"}>Computer Science</MenuItem>
+                                                        <MenuItem value={"Art"}>Art</MenuItem>
+                                                        <MenuItem value={"Geography"}>Geography</MenuItem>
+                                                        <MenuItem value={"Music"}>Music</MenuItem>
+                                                        <MenuItem value={"Physics"}>Physics</MenuItem>
+                                                    </Select>
+                                                </FormControl>
+                                                <FormControl
+                                                    fullWidth
                                                     style={{
-                                                        flex: 1
+                                                        marginBottom: 20
                                                     }}
                                                 >
-                                                    <Typography
-                                                        variant="subtitle2"
-                                                        sx={{
-                                                            fontWeight: 'bold',
-                                                            textAlign: 'left',
-                                                            color: 'rgb(85, 85, 85)'
-                                                        }}
-                                                    >
-                                                        Target Pomodoros
-                                                    </Typography>
-                                                    <TextField
-                                                        disabled
-                                                        variant="outlined"
-                                                        size="small"
-                                                        sx={{
-                                                            border: 'none',
-                                                            "& fieldset": { border: 'none' },
-                                                            borderRadius: 1,
-                                                            backgroundColor: '#efefef',
-                                                            width: '100%',
-                                                            mt: 2
-                                                        }}
-                                                        inputProps={{
-                                                            style: {
-                                                                fontWeight: '900',
-                                                                color: 'rgb(85, 85, 85)'
-                                                            }
-                                                        }}
-                                                        type="number"
-                                                        value={el.totalPomodoro}
-                                                        onChange={(element) => {
-                                                            setNewPomodoros(element.target.value)
-                                                        }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div
-                                            style={{
-                                                backgroundColor: '#efefef',
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                borderBottomLeftRadius: 8,
-                                                borderBottomRightRadius: 8,
-                                                padding: 10
-                                            }}
-                                        >
-                                            <div>
-                                                <Button
-                                                    variant="text"
-                                                    color="error"
-                                                    size="small"
-                                                    sx={{
-                                                        fontSize: 12,
-                                                        fontWeight: 'bold',
-                                                        mr: 1
-                                                    }}
-                                                    onClick={() => {
-                                                        removeItem(ind)
-                                                        setEditName("")
-                                                        setEditCurPom(0)
-                                                        setEditingTask(-1);
-                                                    }}
-                                                >
-                                                    Delete
-                                                </Button>
-                                            </div>
-                                            <div>
-                                                <Button
-                                                    variant="text"
-                                                    size="small"
-                                                    sx={{
-                                                        color: 'rgb(136, 136, 136)',
-                                                        fontSize: 12,
-                                                        fontWeight: 'bold',
-                                                        mr: 1
-                                                    }}
-                                                    onClick={() => {
-                                                        setEditName("")
-                                                        setEditCurPom(0)
-                                                        setEditingTask(-1);
-                                                    }}
-                                                >
-                                                    Cancel
-                                                </Button>
-                                                <Button
-                                                    variant="contained"
-                                                    size="small"
-                                                    sx={{
-                                                        backgroundColor: 'rgb(34, 34, 34)',
-                                                        fontSize: 12,
-                                                        fontWeight: '600'
-                                                    }}
-                                                    onClick={() => {
-                                                        editItem(el)
-                                                    }}
-                                                >
-                                                    Save
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </Box>
-                                    :
-                                    <Box
-                                        key={ind}
-                                        component="section"
-                                        sx={{
-                                            px: 1,
-                                            py: 2,
-                                            borderRadius: 2,
-                                            backgroundColor: 'white',
-                                            cursor: 'pointer',
-                                            width: '100%',
-                                            textAlign: 'center'
-                                        }}>
-                                        <Grid
-                                            container
-                                            justifyContent={'space-between'}
-                                            alignItems={'center'}
-                                        >
-                                            <Grid
-                                                item
-                                                sx={{
-                                                    display: 'flex',
-                                                    alignItems: 'center'
-                                                }}
-                                            >
-                                                <div
-                                                    style={{
-                                                        display: 'flex'
-                                                    }}
-                                                >
-                                                    <CheckCircle
-                                                        sx={{
-                                                            color: el.curPomodoro == el.totalPomodoro ? 'rgb(186, 73, 73)' : 'rgb(223, 223, 223)',
-                                                        }}
-                                                    />
-                                                </div>
-                                                <div
-                                                    style={{
-                                                        color: 'rgb(85, 85, 85)',
-                                                        fontWeight: 'bold',
-                                                        fontSize: 15,
-                                                        marginLeft: 5
-                                                    }}
-                                                >
-                                                    {el.title}
-                                                </div>
-                                            </Grid>
-                                            <Grid
-                                                item
-                                                sx={{
-                                                    display: 'flex',
-                                                    alignItems: 'center'
-                                                }}
-                                            >
-                                                <div
-                                                    style={{
-                                                        color: 'rgb(170, 170, 170)',
-                                                        fontWeight: 'bold',
-                                                        fontSize: 13
-                                                    }}
-                                                >
-                                                    {el.curPomodoro}/{el.totalPomodoro}
-                                                </div>
-                                                <div
-                                                    onClick={() => {
-                                                        setEditName(el.title)
-                                                        setEditCurPom(el.curPomodoro)
-                                                        setEditingTask(ind);
-                                                    }}
-                                                >
-                                                    <MoreVert
-                                                        sx={{
-                                                            marginLeft: 0.5,
-                                                            borderRadius: 2,
-                                                            ":hover": {
-                                                                backgroundColor: 'rgba(0, 0, 0, 0.3)'
-                                                            }
-                                                        }}
-                                                    />
-                                                </div>
-                                            </Grid>
-                                        </Grid>
-                                    </Box>
-                            ))
-                        }
-                        {
-                            addingTask ?
-                                <Box
-                                    component="section"
-                                    sx={{
-                                        borderRadius: 2,
-                                        backgroundColor: 'white',
-                                        width: '100%',
-                                        textAlign: 'left',
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            padding: 20
-                                        }}
-                                    >
-                                        <FormControl
-                                            fullWidth
-                                            style={{
-                                                marginBottom: 20
-                                            }}
-                                        >
-                                            <InputLabel id="demo-simple-select-label">What are you studying?</InputLabel>
-                                            <Select
-                                                labelId="demo-simple-select-label"
-                                                id="demo-simple-select"
-                                                value={newName}
-                                                label="What are you studying?"
-                                                onChange={(e) => {
-                                                    setNewName(e.target.value)
-                                                }}
-                                            >
-                                                <MenuItem value="">
-                                                    <em>None</em>
-                                                </MenuItem>
-                                                <MenuItem value={"Math"}>Math</MenuItem>
-                                                <MenuItem value={"Science"}>Science</MenuItem>
-                                                <MenuItem value={"Literature"}>Literature</MenuItem>
-                                                <MenuItem value={"History"}>History</MenuItem>
-                                                <MenuItem value={"Computer Science"}>Computer Science</MenuItem>
-                                                <MenuItem value={"Art"}>Art</MenuItem>
-                                                <MenuItem value={"Geography"}>Geography</MenuItem>
-                                                <MenuItem value={"Music"}>Music</MenuItem>
-                                                <MenuItem value={"Physics"}>Physics</MenuItem>
-                                            </Select>
-                                        </FormControl>
-                                        <FormControl
-                                            fullWidth
-                                            style={{
-                                                marginBottom: 20
-                                            }}
-                                        >
 
-                                        <InputLabel id="difficultylabel">How difficult is this for you?</InputLabel>
-                                            <Select
-                                                labelId="difficultylabel"
-                                                id="difficulty"
-                                                value={newDifficulty}
-                                                label="How difficult is this for you?"
-                                                onChange={(e) => {
-                                                    setNewDifficulty(e.target.value)
-                                                }}
-                                            >
-                                                <MenuItem value="">
-                                                    <em>None</em>
-                                                </MenuItem>
-                                                <MenuItem value={"Easy"}>Easy</MenuItem>
-                                                <MenuItem value={"Medium"}>Medium</MenuItem>
-                                                <MenuItem value={"Difficult"}>Difficult</MenuItem>
-                                            </Select>
-                                        </FormControl>
-                                        {/* <TextField 
+                                                    <InputLabel id="difficultylabel">How difficult is this for you?</InputLabel>
+                                                    <Select
+                                                        labelId="difficultylabel"
+                                                        id="difficulty"
+                                                        value={newDifficulty}
+                                                        label="How difficult is this for you?"
+                                                        onChange={(e) => {
+                                                            setNewDifficulty(e.target.value)
+                                                        }}
+                                                    >
+                                                        <MenuItem value="">
+                                                            <em>None</em>
+                                                        </MenuItem>
+                                                        <MenuItem value={"Easy"}>Easy</MenuItem>
+                                                        <MenuItem value={"Medium"}>Medium</MenuItem>
+                                                        <MenuItem value={"Difficult"}>Difficult</MenuItem>
+                                                    </Select>
+                                                </FormControl>
+                                                {/* <TextField 
                                         sx={{
                                             border: 'none',
                                             "& fieldset": { border: 'none' },
@@ -1238,274 +1406,325 @@ export default function Main() {
                                             setNewName(element.target.value)
                                         }}
                                     /> */}
-                                        <Typography
-                                            variant="subtitle2"
-                                            sx={{
-                                                fontWeight: 'bold',
-                                                textAlign: 'left',
-                                                color: 'rgb(85, 85, 85)'
-                                            }}
-                                        >
-                                            Est. Pomodoros
-                                        </Typography>
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 30
-                                            }}
-                                        >
-                                            <TextField
-                                                variant="outlined"
-                                                size="small"
-                                                sx={{
-                                                    border: 'none',
-                                                    "& fieldset": { border: 'none' },
-                                                    borderRadius: 1,
-                                                    backgroundColor: '#efefef',
-                                                    width: '30%',
-                                                    mt: 2
-                                                }}
-                                                inputProps={{
-                                                    style: {
-                                                        fontWeight: '900',
+                                                <Typography
+                                                    variant="subtitle2"
+                                                    sx={{
+                                                        fontWeight: 'bold',
+                                                        textAlign: 'left',
                                                         color: 'rgb(85, 85, 85)'
-                                                    }
-                                                }}
-                                                type="number"
-                                                value={newPomodoros}
-                                                onChange={(element) => {
-                                                    setNewPomodoros(element.target.value)
-                                                }}
-                                            />
-                                            <Button
-                                                variant="contained"
-                                                size="small"
-                                                sx={{
-                                                    backgroundColor: 'rgb(34, 34, 34)',
-                                                    fontSize: 12,
-                                                    fontWeight: '600',
-                                                    mt: 2
-                                                }}
-                                                onClick={() => {
-                                                    recommendPomodoros()
+                                                    }}
+                                                >
+                                                    Est. Pomodoros
+                                                </Typography>
+                                                <div
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 30
+                                                    }}
+                                                >
+                                                    <TextField
+                                                        variant="outlined"
+                                                        size="small"
+                                                        sx={{
+                                                            border: 'none',
+                                                            "& fieldset": { border: 'none' },
+                                                            borderRadius: 1,
+                                                            backgroundColor: '#efefef',
+                                                            width: '30%',
+                                                            mt: 2
+                                                        }}
+                                                        inputProps={{
+                                                            style: {
+                                                                fontWeight: '900',
+                                                                color: 'rgb(85, 85, 85)'
+                                                            }
+                                                        }}
+                                                        type="number"
+                                                        value={newPomodoros}
+                                                        onChange={(element) => {
+                                                            setNewPomodoros(element.target.value)
+                                                        }}
+                                                    />
+                                                    <Button
+                                                        variant="contained"
+                                                        size="small"
+                                                        sx={{
+                                                            backgroundColor: 'rgb(34, 34, 34)',
+                                                            fontSize: 12,
+                                                            fontWeight: '600',
+                                                            mt: 2
+                                                        }}
+                                                        onClick={() => {
+                                                            recommendPomodoros()
+                                                        }}
+                                                    >
+                                                        Get Recommendation
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <div
+                                                style={{
+                                                    backgroundColor: '#efefef',
+                                                    display: 'flex',
+                                                    justifyContent: 'flex-end',
+                                                    borderBottomLeftRadius: 8,
+                                                    borderBottomRightRadius: 8,
+                                                    padding: 10
                                                 }}
                                             >
-                                                Get Recommendation
-                                            </Button>
-                                        </div>
-                                    </div>
-                                    <div
-                                        style={{
-                                            backgroundColor: '#efefef',
-                                            display: 'flex',
-                                            justifyContent: 'flex-end',
-                                            borderBottomLeftRadius: 8,
-                                            borderBottomRightRadius: 8,
-                                            padding: 10
-                                        }}
-                                    >
-                                        <Button
-                                            variant="text"
-                                            size="small"
+                                                <Button
+                                                    variant="text"
+                                                    size="small"
+                                                    sx={{
+                                                        color: 'rgb(136, 136, 136)',
+                                                        fontSize: 12,
+                                                        fontWeight: 'bold',
+                                                        mr: 1
+                                                    }}
+                                                    onClick={() => {
+                                                        setAddingTask(false)
+                                                    }}
+                                                >
+                                                    Cancel
+                                                </Button>
+                                                <Button
+                                                    variant="contained"
+                                                    size="small"
+                                                    sx={{
+                                                        backgroundColor: 'rgb(34, 34, 34)',
+                                                        fontSize: 12,
+                                                        fontWeight: '600'
+                                                    }}
+                                                    onClick={() => {
+                                                        addNewTask()
+                                                    }}
+                                                >
+                                                    Save
+                                                </Button>
+                                            </div>
+                                        </Box>
+                                        :
+                                        <Box
+                                            component="section"
                                             sx={{
-                                                color: 'rgb(136, 136, 136)',
-                                                fontSize: 12,
-                                                fontWeight: 'bold',
-                                                mr: 1
+                                                p: 2,
+                                                border: '2px dashed rgba(255, 255, 255, 0.4)',
+                                                borderRadius: 2,
+                                                backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                                                cursor: 'pointer',
+                                                width: '100%',
+                                                textAlign: 'center',
+                                                ":hover": {
+                                                    backgroundColor: 'rgba(0, 0, 0, 0.2)'
+                                                }
                                             }}
                                             onClick={() => {
-                                                setAddingTask(false)
+                                                setAddingTask(!addingTask)
                                             }}
                                         >
-                                            Cancel
-                                        </Button>
-                                        <Button
-                                            variant="contained"
-                                            size="small"
-                                            sx={{
-                                                backgroundColor: 'rgb(34, 34, 34)',
-                                                fontSize: 12,
-                                                fontWeight: '600'
-                                            }}
-                                            onClick={() => {
-                                                addNewTask()
-                                            }}
-                                        >
-                                            Save
-                                        </Button>
-                                    </div>
-                                </Box>
-                                :
-                                <Box
-                                    component="section"
-                                    sx={{
-                                        p: 2,
-                                        border: '2px dashed rgba(255, 255, 255, 0.4)',
-                                        borderRadius: 2,
-                                        backgroundColor: 'rgba(0, 0, 0, 0.1)',
-                                        cursor: 'pointer',
-                                        width: '100%',
-                                        textAlign: 'center',
-                                        ":hover": {
-                                            backgroundColor: 'rgba(0, 0, 0, 0.2)'
-                                        }
-                                    }}
-                                    onClick={() => {
-                                        setAddingTask(!addingTask)
-                                    }}
-                                >
-                                    <Grid container justifyContent={'center'} alignItems={'center'}>
-                                        <AddCircleOutline
-                                            sx={{
-                                                color: 'rgba(255, 255, 255, 0.4)',
-                                                fontSize: 20
-                                            }}
-                                            style={{
-                                                marginRight: 2
-                                            }}
-                                        />
-                                        <Typography
-                                            variant="subtitle2"
-                                            sx={{
-                                                fontWeight: 'bold',
-                                                color: 'rgba(255, 255, 255, 0.4)',
-                                            }}
-                                        >
-                                            Add Task
-                                        </Typography>
-                                    </Grid>
-                                </Box>
-                        }
+                                            <Grid container justifyContent={'center'} alignItems={'center'}>
+                                                <AddCircleOutline
+                                                    sx={{
+                                                        color: 'rgba(255, 255, 255, 0.4)',
+                                                        fontSize: 20
+                                                    }}
+                                                    style={{
+                                                        marginRight: 2
+                                                    }}
+                                                />
+                                                <Typography
+                                                    variant="subtitle2"
+                                                    sx={{
+                                                        fontWeight: 'bold',
+                                                        color: 'rgba(255, 255, 255, 0.4)',
+                                                    }}
+                                                >
+                                                    Add Task
+                                                </Typography>
+                                            </Grid>
+                                        </Box>
+                                }
 
-                    </Grid>
+                            </Grid>
+                    }
+
                 </Box>
             </Container>
             {isModalOpen && <Modal>
-
-                <Button
-                    onClick={
-                        CloseModal
-                    }
-                    sx={{
-                        marginLeft: '390px',
-                        color: '#ba4949',
-                        fontSize: '20px',
-                        justifyContent: 'flex-end',
-
+                <div
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'flex-end'
                     }}
                 >
+                    <CloseOutlined
+                        onClick={() => {
+                            CloseModal()
+                        }}
+                        style={{
+                            cursor: 'pointer'
+                        }}
+                    />
+                </div>
+                {
+                    reportLoading ?
+                        <div
+                            style={{
+                                width: '100%',
+                                textAlign: 'center',
+                                marginTop: 30
+                            }}
+                        >
+                            <CircularProgress />
+                        </div>
+                        :
+                        <div>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    gap: 20,
+                                    padding: 20
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        backgroundColor: 'white',
+                                        flex: 1,
+                                        height: 80,
+                                        padding: 20,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        justifyContent: 'space-between',
+                                        borderRadius: 15
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            fontSize: 20,
+                                            fontWeight: 'bold',
+                                            color: '#1f2124'
+                                        }}
+                                    >
+                                        Total Pomodoros Completed
+                                    </div>
+                                    <div
+                                        style={{
+                                            fontSize: 30,
+                                            fontWeight: 'bold',
+                                            color: '#1f2124'
+                                        }}
+                                    >
+                                        {totPomCompleted}
+                                    </div>
+                                </div>
+                                <div
+                                    style={{
+                                        backgroundColor: 'white',
+                                        flex: 1,
+                                        height: 80,
+                                        padding: 20,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        justifyContent: 'space-between',
+                                        borderRadius: 15
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            fontSize: 20,
+                                            fontWeight: 'bold',
+                                            color: '#1f2124'
+                                        }}
+                                    >
+                                        Favorite Subject
+                                    </div>
+                                    <div
+                                        style={{
+                                            fontSize: 30,
+                                            fontWeight: 'bold',
+                                            color: '#1f2124'
+                                        }}
+                                    >
+                                        {favSubject}
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    gap: 20,
+                                    padding: 20
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        backgroundColor: 'white',
+                                        flex: 1,
+                                        height: 80,
+                                        padding: 20,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        justifyContent: 'space-between',
+                                        borderRadius: 15
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            fontSize: 20,
+                                            fontWeight: 'bold',
+                                            color: '#1f2124'
+                                        }}
+                                    >
+                                        Focus Trend
+                                    </div>
+                                    <div
+                                        style={{
+                                            fontSize: 30,
+                                            fontWeight: 'bold',
+                                            color: '#1f2124'
+                                        }}
+                                    >
+                                        {focusTrend}
+                                    </div>
+                                </div>
+                                <div
+                                    style={{
+                                        backgroundColor: 'white',
+                                        flex: 1,
+                                        height: 80,
+                                        padding: 20,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        justifyContent: 'space-between',
+                                        borderRadius: 15
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            fontSize: 20,
+                                            fontWeight: 'bold',
+                                            color: '#1f2124'
+                                        }}
+                                    >
+                                        Number of Days
+                                    </div>
+                                    <div
+                                        style={{
+                                            fontSize: 30,
+                                            fontWeight: 'bold',
+                                            color: '#1f2124'
+                                        }}
+                                    >
+                                        {numDays}
+                                    </div>
+                                </div>
+                            </div>
+                            <Line options={options} data={data} />
+                        </div>
+                }
 
-                    <b>X</b>
-                </Button>
 
-                <Typography>
-                    Completed Pomos:
-                </Typography>
-                <Typography>
-                    {completedPomos}
-                </Typography>
-            </Modal>}
-
-
-            {isModalOpen && <Modal>
-
-                <Button
-                    onClick={
-                        CloseModal
-
-
-                    }
-                    sx={{
-                        marginLeft: '390px',
-                        color: '#ba4949',
-                        fontSize: '20px',
-                        justifyContent: 'flex-end',
-
-                    }}
-                >
-
-                    <b>X</b>
-                </Button>
-                <Typography
-                    sx={{
-                        color: '#ba4949',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        fontSize: '30px',
-                        fontWeight: 'bold',
-                        textAlign: 'center',
-                    }}
-                >
-                    Settings
-                </Typography>
-                <Typography
-                    sx={{
-                        marginTop: '20px',
-                        color: '#403d3d',
-                        fontSize: '19px',
-                        fontWeight: 'bold',
-
-                    }}
-                >
-                    Change Your Password:
-                </Typography>
-                <Button
-                    onClick={
-                        ViewProfile
-                    }
-                    sx={{
-                        marginTop: '15px',
-                        backgroundColor: '#b5aaa8',
-                        color: '#ffffff',
-                        fontWeight: 'bold',
-                    }}
-                >
-
-                    Change Password
-                </Button>
-                <Typography
-                    sx={{
-                        marginTop: '20px',
-                        color: '#403d3d',
-                        fontSize: '19px',
-                        fontWeight: 'bold',
-
-                    }}
-                >
-                    Timer Settings:
-                </Typography>
-                <Typography
-                    sx={{
-                        marginTop: '20px',
-                        marginRight: '10px',
-                        color: '#b5aaa8',
-                        fontSize: '19px',
-                        display: 'inline-block',
-
-
-                    }}
-                >
-                    Auto Start Timer?:
-                </Typography>
-
-                <Button
-                    sx={{
-
-                        backgroundColor: '#b5aaa8',
-                        color: '#ffffff',
-                        height: '30px',
-                        fontWeight: 'bold',
-
-
-
-                    }}
-                    onClick={
-                        AutoStartTimer
-                    }
-                >
-                    <p><b>{isAutoTrue ? 'No' : 'Yes'}</b></p>
-                </Button>
             </Modal>}
             {/* <Webcam
                 audio={false}
