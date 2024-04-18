@@ -462,7 +462,7 @@ export default function Main() {
                         }
                         if(timePomo % 300 == 0)
                         {
-                            // capture();
+                            capture();
                         }
                         if (timePomo === 0 && isAutoTrue) {
                             setCompletedPomos(completedPomos + 1);
