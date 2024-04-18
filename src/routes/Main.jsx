@@ -17,8 +17,10 @@ import { emailAtom, passwordAtom } from "../recoil/Recoil";
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import Webcam from "react-webcam";
-import { Bar } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, BarController } from 'chart.js';
+import { Bar } from "react-chartjs-2";
+
+
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -42,6 +44,16 @@ const videoConstraints = {
     facingMode: "user"
 };
 
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    Title,
+    Tooltip,
+    Legend,
+    BarController
+  );
+
 export default function Main() {
 
     const [tasks, setTasks] = useState([])
@@ -58,9 +70,9 @@ export default function Main() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const displaycurrentDate = currentDate.toLocaleDateString()
 
-    const [timePomo, setTimePomo] = useState(25 * 60);
-    const [timeBreakS, setTimeBreakS] = useState(5 * 60);
-    const [timeBreakL, setTimeBreakL] = useState(15 * 60);
+    const [timePomo, setTimePomo] = useState(1);
+    const [timeBreakS, setTimeBreakS] = useState(1);
+    const [timeBreakL, setTimeBreakL] = useState(1);
     const [isTimerActive, setIsTimerActive] = useState(false);
     const [version, setVersion] = useState('pomo');
     const [minutes, setMinutes] = useState(0);
@@ -205,51 +217,18 @@ export default function Main() {
 
     }
 
-    ChartJS.register(
-        CategoryScale,
-        LinearScale,
-        BarElement,
-        Title,
-        Tooltip,
-        Legend
-      );
+   
+   
+   
 
-    const data = {
-        labels: dateBar,
-        datasets: [
-            {
-                label: 'Daily Task Completion',
-                data: [0,5,10,20],
-                backgroundColor: [
-                    'rgba(255, 99, 132, 0.2)',
-                    'rgba(54, 162, 235, 0.2)',
-                    'rgba(255, 206, 86, 0.2)',
-                    'rgba(75, 192, 192, 0.2)',
-                    'rgba(153, 102, 255, 0.2)',
-                ],
-                borderColor: [
-                    'rgba(255, 99, 132, 1)',
-                    'rgba(54, 162, 235, 1)',
-                    'rgba(255, 206, 86, 1)',
-                    'rgba(75, 192, 192, 1)',
-                    'rgba(153, 102, 255, 1)',
-                ],
-                borderWidth: 1,
-                },
-            ],
-        
-    };
 
-    const options = {
-        scales: {
-            y: {
-            beginAtZero: true
-            },
-            responsive: true,
-            maintainAspectRatio: false,
-        }
-        };
+   
+
     
+    
+    
+
+
 
     useEffect(() => {
         const getTasks = async () => {
@@ -275,7 +254,7 @@ export default function Main() {
             }
         }
         getTasks();
-    }, [currentDate])
+    }, [currentDate]);
 
     const addNewTask = async () => {
         // Get a copy of the data array
@@ -348,6 +327,8 @@ export default function Main() {
         setEditName("")
         setEditCurPom(0)
         setEditingTask(-1);
+
+
     };
 
 
@@ -465,7 +446,64 @@ export default function Main() {
         }
 
 
+
+
+
     }
+
+
+
+
+
+    const [chartData, setChartData] = useState({
+        labels: dateBar,
+        datasets: [{
+            label: '# of Pomodoros',
+            data: [12, 19, 3, 5, 2, 3],
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.5)',
+                'rgba(54, 162, 235, 0.5)',
+                'rgba(255, 206, 86, 0.5)',
+                'rgba(75, 192, 192, 0.5)',
+                'rgba(153, 102, 255, 0.5)',
+                'rgba(255, 159, 64, 0.5)'
+            ],
+            borderColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)',
+                'rgba(255, 159, 64, 1)'
+            ],
+            borderWidth: 1
+        }]
+    });
+
+
+    const options =  {
+        scales: {
+            y: {
+                beginAtZero: true
+            },
+            x:{
+                dateBar
+            }
+        }
+    };
+           
+            
+    const updateChartData = (newLabels, newData) => {
+        setChartData({
+          labels: newLabels,
+          datasets: [{
+            label: '# of Pomodoros',
+            data: newData,
+          }]
+        });
+      };
+    
+
 
     const whichModal = (whichModalVersion) => {
         switch (whichModalVersion) {
@@ -1519,7 +1557,16 @@ export default function Main() {
                 >
                     {completedPomos}
                 </Typography>
+
                 <Bar data={data} options={options} />
+
+           
+
+                
+
+             
+
+                
             </Modal>}
 
 
