@@ -457,7 +457,7 @@ export default function Main() {
             });
         }
         else {
-        else
+   
         {
 
             const docRef = await addDoc(collection(db, "tasks"), {
@@ -771,7 +771,7 @@ export default function Main() {
     return (
         <div
             style={{
-                backgroundColor: '#ba4949',
+                backgroundColor: '#4050b5',
                 minHeight: '100vh'
             }}
         >
@@ -1857,4 +1857,5 @@ export default function Main() {
             </Modal>}
         </div>
     )
+}
 }
