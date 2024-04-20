@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import { initializeApp } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from 'react-router-dom';
+import logo from '../assets/logo.png';
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
@@ -97,13 +98,17 @@ export default function Register() {
                         flexDirection: 'row',
                         justifyContent: 'space-around',
                         alignItems: 'center',
-                        marginBottom: 20
+                        marginBottom: 20,
+                        gap: 10
                     }}
                 >
-                    <Task 
-                        sx={{
-                            color: 'white',
-                            fontSize: 50
+                    <img 
+                        src={logo}
+                        alt="logo"
+                        style={{
+                            height: 50,
+                            width: 50,
+                            borderRadius: 10
                         }}
                     />
                     <Typography 
@@ -236,7 +241,7 @@ export default function Register() {
                     <div
                         style={{
                             textAlign: 'center',
-                            
+                            marginTop: 30
                         }}
                     >
                         Already have an account? {' '}

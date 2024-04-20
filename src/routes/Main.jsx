@@ -13,6 +13,7 @@ import {
     useRecoilState,
     useRecoilValue,
 } from 'recoil';
+import logo from '../assets/logo.png';
 import { emailAtom, passwordAtom } from "../recoil/Recoil";
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, where, getDocs, orderBy, limit } from "firebase/firestore";
@@ -250,7 +251,7 @@ export default function Main() {
 
     }
 
-    const capture = async() => {
+    const capture = async () => {
         const imageSrc = webcamRef.current.getScreenshot();
         // Send the image to the Flask server
         const response = await fetch('https://technovationbackend-d7d391d697d1.herokuapp.com/predict', {
@@ -260,26 +261,24 @@ export default function Main() {
             },
             body: JSON.stringify({ image: imageSrc }),
         });
-        if(response.ok)
-        {
+        if (response.ok) {
             const data = await response.json();
             var prediction = data['prediction'];
             console.log(prediction)
             var tempEmail = localStorage.getItem('email')
             const newData = [...tasks];
             const index = newData.findIndex(item => item.curPomodoro != item.totalPomodoro);
-            if(index != -1)
-            {
+            if (index != -1) {
                 const docRef = await addDoc(collection(db, "focus"), {
                     prediction: prediction,
                     email: tempEmail,
                     subject: newData[index]['title'],
                     date: new Date()
-                });  
+                });
             }
         }
 
-      }
+    }
 
 
     useEffect(() => {
@@ -460,8 +459,7 @@ export default function Main() {
                         if (timePomo === 0) {
                             updatePomodoro();
                         }
-                        if(timePomo % 300 == 0)
-                        {
+                        if (timePomo % 300 == 0) {
                             capture();
                         }
                         if (timePomo === 0 && isAutoTrue) {
@@ -571,15 +569,14 @@ export default function Main() {
     const toggleTimer = () => {
 
         navigator.permissions.query({ name: 'camera' })
-        .then((permissionObj) => {
-            if(permissionObj.state == 'denied')
-            {
-                alert("You need to allow camera permissions to get pomodoro recommendations.")
-            }
-        })
-        .catch((error) => {
-            console.log('Got error :', error);
-        });
+            .then((permissionObj) => {
+                if (permissionObj.state == 'denied') {
+                    alert("You need to allow camera permissions to get pomodoro recommendations.")
+                }
+            })
+            .catch((error) => {
+                console.log('Got error :', error);
+            });
 
         const newData = [...tasks];
 
@@ -635,28 +632,26 @@ export default function Main() {
             var newFocus = ""
             querySnapshot.forEach((doc) => {
                 var data = doc.data()
-                if(data['prediction'] == 0)
-                {
+                if (data['prediction'] == 0) {
                     newFocus = "High"
                 }
-                else
-                {
+                else {
                     newFocus = "Low"
                 }
             });
             const response = await fetch('https://technovationbackend-d7d391d697d1.herokuapp.com/recommend', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                "subject": newName,
-                "focus": newFocus,
-                "difficulty": newDifficulty
-            }),
-        });
-        const data = await response.json()
-        setNewPomodoros(data.recommendation)
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    "subject": newName,
+                    "focus": newFocus,
+                    "difficulty": newDifficulty
+                }),
+            });
+            const data = await response.json()
+            setNewPomodoros(data.recommendation)
         }
     }
 
@@ -742,16 +737,19 @@ export default function Main() {
                     <div
                         style={{
                             display: 'flex',
-                            alignItems: 'center'
+                            alignItems: 'center',
+                            gap: 10
                         }}
                     >
-                        <Task
-                            sx={{
-                                color: 'white',
-                                fontSize: 40
+                        <img
+                            src={logo}
+                            alt="logo"
+                            style={{
+                                height: 50,
+                                width: 50,
+                                borderRadius: 10
                             }}
                         />
-
                         <Typography
                             variant="h4"
                             sx={{
@@ -1078,7 +1076,7 @@ export default function Main() {
                                     textAlign: 'center'
                                 }}
                             >
-                                <CircularProgress 
+                                <CircularProgress
                                     sx={{
                                         color: 'white'
                                     }}
