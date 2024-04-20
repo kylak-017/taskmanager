@@ -459,7 +459,7 @@ export default function Main() {
         labels: dateBar,
         datasets: [{
             label: '# of Pomodoros',
-            data: [12, 19, 3, 5, 2, 3],
+            data: [30],
             backgroundColor: [
                 'rgba(255, 99, 132, 0.5)',
                 'rgba(54, 162, 235, 0.5)',
@@ -486,25 +486,37 @@ export default function Main() {
             y: {
                 beginAtZero: true
             },
-            x:{
-                dateBar
-            }
-        }
+        
+        },
+        responsive: true,
+        maintainAspectRatio: false 
     };
            
-            
-    const updateChartData = (newLabels, newData) => {
-        setChartData({
-          labels: newLabels,
-          datasets: [{
-            label: '# of Pomodoros',
-            data: newData,
-          }]
-        });
-      };
+
+  
+    useEffect(() => {
+        // Dummy data fetching
+        const fetchData = async () => {
+          // Replace with your own data fetching logic
+          const newData = [12, 19, 3, 5, 2, 3];
+          const newLabels = [dateBar];
+          
+          setChartData({
+            ...chartData,
+            labels: newLabels,
+            datasets: [{
+              ...chartData.datasets[0],
+              data: newData
+            }]
+          });
+        };
     
-
-
+        fetchData();
+      }, []);
+    
+  
+            
+    
     const whichModal = (whichModalVersion) => {
         switch (whichModalVersion) {
             case 'settings':
@@ -1558,7 +1570,7 @@ export default function Main() {
                     {completedPomos}
                 </Typography>
 
-                <Bar data={data} options={options} />
+                <Bar data={chartData} options={options} />
 
            
 
