@@ -125,7 +125,7 @@ export default function Login() {
                                 color: '#ffffff'
                             }}
                         >
-                            Balance Booster
+                            Balance Boost
                         </Typography>
                     </div>
                     <Typography

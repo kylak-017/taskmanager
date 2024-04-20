@@ -758,7 +758,7 @@ export default function Main() {
                                 textAlign: 'left',
                             }}
                         >
-                            Balance Booster
+                            Balance Boost
 
                         </Typography>
                     </div>

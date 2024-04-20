@@ -118,7 +118,7 @@ export default function Register() {
                             color: '#ffffff'
                         }}
                     >
-                        Balance Booster
+                        Balance Boost
                     </Typography>
                 </div>
                 <Typography 
