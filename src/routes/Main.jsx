@@ -758,7 +758,7 @@ export default function Main() {
                                 textAlign: 'left',
                             }}
                         >
-                            Task Manager
+                            Balance Booster
 
                         </Typography>
                     </div>

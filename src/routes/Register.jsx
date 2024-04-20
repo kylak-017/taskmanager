@@ -118,7 +118,7 @@ export default function Register() {
                             color: '#ffffff'
                         }}
                     >
-                        Task Manager
+                        Balance Booster
                     </Typography>
                 </div>
                 <Typography 
