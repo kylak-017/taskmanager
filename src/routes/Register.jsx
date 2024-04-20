@@ -197,6 +197,7 @@ export default function Register() {
                         onChange={(el) => {
                             setPassword(el.target.value)
                         }}
+                        type="password"
                     />
                     <Typography
                         sx={{
@@ -222,6 +223,7 @@ export default function Register() {
                         onChange={(el) => {
                             setConfirmPassword(el.target.value)
                         }}
+                        type="password"
                     />
                     <Button
                         variant="contained" 

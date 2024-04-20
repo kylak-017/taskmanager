@@ -464,16 +464,27 @@ export default function Main() {
                         }
                         if (timePomo === 0 && isAutoTrue) {
                             setCompletedPomos(completedPomos + 1);
-                            if (completedPomos === 4) {
-                                setVersion('longBreak');
-                                setTimePomo(1);
-                                break;
+                            const newData = [...tasks];
 
+                            // Find the index of the object with the given id
+                            console.log(newData)
+                            const index = newData.findIndex(item => item.curPomodoro != item.totalPomodoro);
+
+                            if (index !== -1) {
+                                if (completedPomos === 4) {
+                                    setVersion('longBreak');
+                                    setTimePomo(1);
+                                    break;
+
+                                }
+                                else {
+                                    setVersion('shortBreak');
+                                    setTimePomo(1);
+                                    break;
+                                }
                             }
                             else {
-                                setVersion('shortBreak');
-                                setTimePomo(1);
-                                break;
+                                alert("You have finished all your pomodoros.");
                             }
 
                         }
@@ -507,18 +518,10 @@ export default function Main() {
 
                         }
                         break;
-
-
-
-
                 }
-
             }, 1000);
         }
-
-
-
-
+        
         return () => {
             if (interval) {
                 clearInterval(interval);

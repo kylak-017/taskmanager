@@ -205,6 +205,7 @@ export default function Login() {
                             onChange={(element) => {
                                 setPassword(element.target.value)
                             }}
+                            type='password'
                         />
                         <Button
                             variant="contained"
