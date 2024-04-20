@@ -5,6 +5,7 @@ import Box from '@mui/material/Box';
 import { TextField, Button } from '@mui/material';
 import { Task } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
+import logo from '../assets/logo.png';
 // Import the functions you need from the SDKs you need
 
 
@@ -104,13 +105,17 @@ export default function Login() {
                             flexDirection: 'row',
                             justifyContent: 'space-around',
                             alignItems: 'center',
-                            marginBottom: 20
+                            marginBottom: 20,
+                            gap: 10
                         }}
                     >
-                        <Task
-                            sx={{
-                                color: 'white',
-                                fontSize: 50
+                        <img 
+                            src={logo}
+                            alt="logo"
+                            style={{
+                                height: 50,
+                                width: 50,
+                                borderRadius: 10
                             }}
                         />
                         <Typography
@@ -120,7 +125,7 @@ export default function Login() {
                                 color: '#ffffff'
                             }}
                         >
-                            Task Manager
+                            Balance Boost
                         </Typography>
                     </div>
                     <Typography
