@@ -133,8 +133,8 @@ export default function Main() {
             {
                 label: 'Pomodoros',
                 data: dataNeed,
-                borderColor: 'rgb(255, 99, 132)',
-                backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                borderColor: 'rgb(34, 99, 255)',
+                backgroundColor: 'rgba(20, 30, 255, 240)',
             }
         ],
     };
@@ -714,7 +714,7 @@ export default function Main() {
     return (
         <div
             style={{
-                backgroundColor: '#ba4949',
+                backgroundColor: '#4050b5',
                 minHeight: '100vh'
             }}
         >
@@ -937,8 +937,8 @@ export default function Main() {
                 >
                     <Button
                         sx={{
-                            color: version == 'pomo' ? '#ffffff' : '#f77474',
-                            backgroundColor: version == 'pomo' ? '#f77474' : '#ffffff',
+                            color: version == 'pomo' ? '#ffffff' : '#78a6eb',
+                            backgroundColor: version == 'pomo' ? '#78a6eb' : '#ffffff',
                             marignLeft: '5px',
                             marginRight: '5px'
                         }}
@@ -950,8 +950,8 @@ export default function Main() {
                     </Button>
                     <Button
                         sx={{
-                            color: version == 'shortBreak' ? '#ffffff' : '#f77474',
-                            backgroundColor: version == 'shortBreak' ? '#f77474' : '#ffffff',
+                            color: version == 'shortBreak' ? '#ffffff' : '#78a6eb',
+                            backgroundColor: version == 'shortBreak' ? '#78a6eb' : '#ffffff',
                             marignLeft: '5px',
                             marginRight: '5px'
 
@@ -964,8 +964,8 @@ export default function Main() {
                     </Button>
                     <Button
                         sx={{
-                            color: version == 'longBreak' ? '#ffffff' : '#f77474',
-                            backgroundColor: version == 'longBreak' ? '#f77474' : '#ffffff',
+                            color: version == 'longBreak' ? '#ffffff' : '#78a6eb',
+                            backgroundColor: version == 'longBreak' ? '#78a6eb' : '#ffffff',
                             marignLeft: '5px',
                             marginRight: '5px'
                         }}
@@ -996,7 +996,7 @@ export default function Main() {
                             justifyContent: 'center', // Centers the text horizontally in the box
                             boxShadow: 2,
                             padding: 2,
-                            backgroundColor: '#f77474'
+                            backgroundColor: '#5964e3'
                         }} >
 
 
@@ -1020,7 +1020,7 @@ export default function Main() {
                             </Typography>
                             <Button
                                 sx={{
-                                    color: "#f77474",
+                                    color: "#78a6eb",
                                     marginTop: '120px',
                                     backgroundColor: '#ffffff',
                                     height: '30px',
@@ -1325,7 +1325,7 @@ export default function Main() {
                                                         >
                                                             <CheckCircle
                                                                 sx={{
-                                                                    color: el.curPomodoro == el.totalPomodoro ? 'rgb(186, 73, 73)' : 'rgb(223, 223, 223)',
+                                                                    color: el.curPomodoro == el.totalPomodoro ? 'rgb(76, 73, 255)' : 'rgb(223, 223, 223)',
                                                                 }}
                                                             />
                                                         </div>

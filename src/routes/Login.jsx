@@ -83,7 +83,7 @@ export default function Login() {
     return (
         <div
             style={{
-                backgroundColor: '#ba4949',
+                backgroundColor: '#4050b5',
                 height: '100vh',
                 display: 'flex',
                 justifyContent: 'center',
