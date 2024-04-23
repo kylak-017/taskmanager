@@ -76,6 +76,7 @@ export default function Main() {
     const [editCurPom, setEditCurPom] = useState(0);
     const [LogEmail, setLogEmail] = useRecoilState(emailAtom);
     const [LogPw, setLogPw] = useRecoilState(emailAtom);
+    const [infoModal, setInfoModal] = useState(true);
 
     const [currentDate, setCurrentDate] = useState(new Date());
     const displaycurrentDate = currentDate.toLocaleDateString()
@@ -1789,8 +1790,158 @@ export default function Main() {
                             <Line options={options} data={data} />
                         </div>
                 }
-
-
+            </Modal>}
+            {infoModal && <Modal>
+                <div
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        marginBottom: 20
+                    }}
+                >
+                    <div
+                        style={{
+                            fontSize: 25,
+                            fontWeight: 'bold'
+                        }}
+                    >
+                        Instructions
+                    </div>
+                    <CloseOutlined
+                        onClick={() => {
+                            setInfoModal(false);
+                        }}
+                        style={{
+                            cursor: 'pointer'
+                        }}
+                    />
+                </div>
+                <div
+                    style={{
+                        display: 'flex',
+                        gap: 10,
+                        marginBottom: 20
+                    }}
+                >
+                    <div
+                        style={{
+                            fontWeight: 'bold'
+                        }}
+                    >
+                        1.
+                    </div>
+                    <div>
+                    When you open the app, you will be instructed to register or login. If you have an account already, login right away. If not, click on the register button.
+                    </div>
+                </div>
+                <div
+                    style={{
+                        display: 'flex',
+                        gap: 10,
+                        marginBottom: 20
+                    }}
+                >
+                    <div
+                        style={{
+                            fontWeight: 'bold'
+                        }}
+                    >
+                        2.
+                    </div>
+                    <div>
+                    After you log in, you will be able to see a pop-up to allow the video webcam. Enable it so that your focus and attention level can be tracked through your eye movements.
+                    </div>
+                </div>
+                <div
+                    style={{
+                        display: 'flex',
+                        gap: 10,
+                        marginBottom: 20
+                    }}
+                >
+                    <div
+                        style={{
+                            fontWeight: 'bold'
+                        }}
+                    >
+                        3.
+                    </div>
+                    <div>
+                    To start on a task, click on the “Add task” button and set up the category your task falls under, along with the estimated pmodoro sessions. The pomdoro session is a cycle of 25 minutes of work and a 5 minute break. The long break will start after 4 cycle of pomodoro, and it will last 15 minutes.
+                    </div>
+                </div>
+                <div
+                    style={{
+                        display: 'flex',
+                        gap: 10,
+                        marginBottom: 20
+                    }}
+                >
+                    <div
+                        style={{
+                            fontWeight: 'bold'
+                        }}
+                    >
+                        4.
+                    </div>
+                    <div>
+                    To get a recommendation  on the # of pomodoros, click on the “Get reccomendation” button.
+                    </div>
+                </div>
+                <div
+                    style={{
+                        display: 'flex',
+                        gap: 10,
+                        marginBottom: 20
+                    }}
+                >
+                    <div
+                        style={{
+                            fontWeight: 'bold'
+                        }}
+                    >
+                        5.
+                    </div>
+                    <div>
+                    After you are done with the tasks for the day, you can click on the “report” button to get a detailed analysis of how you spend your time, which includes your most frequently chosen subject, the focus trend (based on # of tasks and eye movement), total pomodoros completed, and number of days recorded. There is a graph that details this trend using a day-by-day analysis.
+                    </div>
+                </div>
+                <div
+                    style={{
+                        display: 'flex',
+                        gap: 10,
+                        marginBottom: 20
+                    }}
+                >
+                    <div
+                        style={{
+                            fontWeight: 'bold'
+                        }}
+                    >
+                        6.
+                    </div>
+                    <div>
+                    After you are done, you can choose to logout by clicking on the 'logout' button.
+                    </div>
+                </div>
+                <div
+                    style={{
+                        display: 'flex',
+                        gap: 10,
+                        marginBottom: 20
+                    }}
+                >
+                    <div
+                        style={{
+                            fontWeight: 'bold'
+                        }}
+                    >
+                        7.
+                    </div>
+                    <div>
+                    If there are any inquiries, please feel free to fill out the following form: <a href='https://forms.gle/joCsumzmjVofugic7' target="_blank">Google Form</a>
+                    </div>
+                </div>
             </Modal>}
         </div>
     )
