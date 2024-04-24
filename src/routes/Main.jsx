@@ -79,7 +79,12 @@ export default function Main() {
     const [infoModal, setInfoModal] = useState(true);
 
     const [currentDate, setCurrentDate] = useState(new Date());
-    const displaycurrentDate = currentDate.toLocaleDateString()
+    const dateOptions = {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }
+    const displaycurrentDate = currentDate.toLocaleDateString(undefined, dateOptions)
 
     const [timePomo, setTimePomo] = useState(25 * 60);
     const [timeBreakS, setTimeBreakS] = useState(5 * 60);
@@ -357,10 +362,10 @@ export default function Main() {
     useEffect(() => {
         const getTasks = async () => {
             setPomLoading(true);
-            var tasks = localStorage.getItem('tasks')
             var tempEmail = localStorage.getItem('email')
             const q = query(collection(db, "tasks"), where("email", "==", tempEmail), where("date", '==', displaycurrentDate));
             const querySnapshot = await getDocs(q);
+            console.log('working')
             if (querySnapshot.empty) {
                 setCurDocId("");
                 setTasks([]);
@@ -368,6 +373,7 @@ export default function Main() {
             else {
                 querySnapshot.forEach((doc) => {
                     var data = doc.data()
+                    console.log(data)
                     setCurDocId(doc.id);
                     setTasks(JSON.parse(data['data']))
                 });
@@ -437,11 +443,32 @@ export default function Main() {
         setTasks(updatedItems);
         // localStorage.setItem('tasks', JSON.stringify(updatedItems));
         var tempEmail = localStorage.getItem('email');
-        await setDoc(doc(db, "tasks", curDocId), {
-            data: JSON.stringify(updatedItems),
-            email: tempEmail,
-            date: displaycurrentDate
-        });
+        if(curDocId)
+        {
+            await setDoc(doc(db, "tasks", curDocId), {
+                data: JSON.stringify(updatedItems),
+                email: tempEmail,
+                date: displaycurrentDate
+            });
+        }
+        else
+        {
+            const q = query(collection(db, "tasks"), where("email", "==", tempEmail), where("date", '==', displaycurrentDate));
+            const querySnapshot = await getDocs(q);
+            var tempId = ""
+            querySnapshot.forEach((doc) => {
+                var data = doc.data()
+                setCurDocId(doc.id);
+                tempId = doc.id;
+                setTasks(JSON.parse(data['data']))
+            });
+            await setDoc(doc(db, "tasks", tempId), {
+                data: JSON.stringify(updatedItems),
+                email: tempEmail,
+                date: displaycurrentDate
+            });
+        }
+
         setEditName("")
         setEditCurPom(0)
         setEditingTask(-1);
