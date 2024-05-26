@@ -64,6 +64,16 @@ ChartJS.register(
 
 
 
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    Title,
+    Tooltip,
+    Legend,
+    BarController
+  );
+
 export default function Main() {
 
     const [tasks, setTasks] = useState([])
@@ -86,9 +96,9 @@ export default function Main() {
     }
     const displaycurrentDate = currentDate.toLocaleDateString(undefined, dateOptions)
 
-    const [timePomo, setTimePomo] = useState(25 * 60);
-    const [timeBreakS, setTimeBreakS] = useState(5 * 60);
-    const [timeBreakL, setTimeBreakL] = useState(15 * 60);
+    const [timePomo, setTimePomo] = useState(1);
+    const [timeBreakS, setTimeBreakS] = useState(1);
+    const [timeBreakL, setTimeBreakL] = useState(1);
     const [isTimerActive, setIsTimerActive] = useState(false);
     const [version, setVersion] = useState('pomo');
     const [minutes, setMinutes] = useState(0);
@@ -359,6 +369,51 @@ export default function Main() {
         });
     };
 
+    const[dateBar, setDateBar] = useState();
+    
+    const getReport = async() =>{
+        var tempEmail = localStorage.getItem('email')
+            const q = query(collection(db, "tasks"), where("email", "==", tempEmail));
+            const querySnapshot = await getDocs(q);
+            if(querySnapshot.empty)
+            {
+                
+            }
+            else{
+                var allDates = [];
+                querySnapshot.forEach((doc) => { 
+                    var data = doc.data()
+                    if(data['email'] == tempEmail){
+                        allDates = {
+                            date: data['date'],
+                            tasks: JSON.parse(data['data'])
+                        }
+                    }
+                    
+                });
+
+                setDateBar(allDates);
+                
+
+
+            
+            }
+
+    }
+
+   
+   
+   
+
+
+   
+
+    
+    
+    
+
+
+
     useEffect(() => {
         const getTasks = async () => {
             setPomLoading(true);
@@ -381,7 +436,7 @@ export default function Main() {
             setPomLoading(false);
         }
         getTasks();
-    }, [currentDate])
+    }, [currentDate]);
 
     const addNewTask = async () => {
         // Get a copy of the data array
@@ -409,6 +464,9 @@ export default function Main() {
             });
         }
         else {
+   
+        {
+
             const docRef = await addDoc(collection(db, "tasks"), {
                 data: JSON.stringify(newData),
                 email: tempEmail,
@@ -472,6 +530,8 @@ export default function Main() {
         setEditName("")
         setEditCurPom(0)
         setEditingTask(-1);
+
+
     };
 
 
@@ -827,13 +887,17 @@ export default function Main() {
                                 Report
                             </Typography>
                         </div>
-                        {/* <div
+                        <div
                             style={{
                                 display: 'flex',
                                 alignItems: 'center'
                             }}
                             onClick={
-                                OpenModal
+                                () =>{
+                                    whichModal('settings');
+                                    OpenModal();
+    
+                                }
                             }
                         >
 
@@ -855,7 +919,9 @@ export default function Main() {
                                 Settings
                             </Typography>
 
-                        </div> */}
+                        </div>
+
+
                         <div
                             style={{
                                 display: 'flex',
@@ -1972,4 +2038,5 @@ export default function Main() {
             </Modal>}
         </div>
     )
+}
 }
